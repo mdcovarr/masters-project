@@ -13,6 +13,13 @@
 * Scrambled face was generated from either famous or non-famous face
 of the same stimuli number.
 
+After M/EEG acquisition, participants saw each of the 300 faces again.
+(1) they had not seen the face before the experiment
+(2) the face looked familiar, but they could not remember from where
+(3) they knew the face i.e. could remember definite fact about them, such as their job, a movie they were in, their name etc.
+
+73% of  famous faces were given a rating of 2-3
+86% of nonfamous faces were given a rating of 1
 
 #### Goal
 * To predict the category of a visual stimulus presented to a subject
