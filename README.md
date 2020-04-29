@@ -25,7 +25,10 @@ from the concurrent brain activity.
 
 #### Paper References and Links
 ```
-Månsson, K. N. T. et al. Structural but not functional neuroplasticity one year after effective cognitive behaviour therapy for social anxiety disorder. Behav. Brain Res. 318, 45–51 (2017).
+Månsson, K. N. T. et al.
+Structural but not functional neuroplasticity one year after effective
+cognitive behaviour therapy for social anxiety disorder.
+Behav. Brain Res. 318, 45–51 (2017).
 ```
 
 [Reference](http://liu.diva-portal.org/smash/get/diva2:1047640/FULLTEXT01)
