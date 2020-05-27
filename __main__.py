@@ -21,8 +21,9 @@ import re
 from scipy import signal # imports to make spectrogram images
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-ROOT_PATH = 'data'
-PATTERN = os.path.join(CWD, ROOT_PATH, '**', '*.bdf')
+ROOT_PATH = os.path.join(CWD, 'data')
+SPECTROGRAM_ROOT = os.path.join(CWD, 'spectrogram-images')
+PATTERN = os.path.join(ROOT_PATH, '**', '*.bdf')
 TEST_FILE = './data/sub-hc1/ses-hc/eeg/sub-hc1_ses-hc_task-rest_eeg.bdf'
 NONPD_PATH = r'.*sub-hc\d{1,2}.*'
 PD_PATH = r'.*sub-pd\d{1,2}.*'
@@ -31,6 +32,7 @@ INTERVAL = 2560
 FREQUENCY = 512
 M = 256
 MAX_AMP = 104
+CHANNEL_COUNT = 40
 
 def handle_arguments():
     """
@@ -57,6 +59,34 @@ def get_data_files(location):
     all_files = glob.glob(location, recursive=True)
 
     return all_files
+
+def clean_and_create(path):
+    """
+    Function used to clear out a directory and create a new one
+    :param path: directory path to clean and create
+    """
+    if os.path.isdir(path):
+        shutil.rmtree(path, recursive=True)
+
+    os.mkdir(path)
+
+def handle_create_spectrograms(state, root_path):
+    """
+    Function used to handle creating spectrogram images
+    :param state: variable denoting what spectrograms to create
+    :param root_path: root path to output specogram images
+    :return: True if successful, False otherwise
+    """
+    class_list = []
+
+    if (state == 'ALL'):
+        class_list = ['NONPD', 'PD']
+    else:
+        class_list = [state]
+
+    # need to check if output directories exist
+    if os.path.isdir(root_path):
+        clean_and_create(root_path)
 
 def generate_stft_from_data(fs, m, max_amp, sub_data, output_filepath):
     """
@@ -117,6 +147,10 @@ def main():
         print("Error: While separating PD and NON PD patients")
         exit(1)
 
+    """
+        3. Handle generation of spectrogram images
+    """
+    handle_create_spectrograms(args.class, SPECTROGRAM_ROOT)
 
     raw_data = mne.io.read_raw_bdf(TEST_FILE, preload=True)
     the_data = np.array(raw_data.get_data())
