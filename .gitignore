@@ -1,3 +1,6 @@
+# Location where raw data is set
+data/
+
 # vscode
 .vscode/
 
