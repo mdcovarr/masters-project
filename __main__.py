@@ -69,7 +69,7 @@ def clean_and_create(path):
     if os.path.isdir(path):
         shutil.rmtree(path, ignore_errors=True)
 
-    os.mkdir(path)
+    os.makedirs(path)
 
 def load_data(filename):
     """
@@ -87,6 +87,15 @@ def load_data(filename):
         raw_data.ch_names
     """
     return raw_data
+
+def get_patient_path(filename, class_root, label):
+    """
+    Function used to get the patients location to place spectrogram images
+    """
+    filename_dir = filename.split(os.path.sep)[-4:-2]
+    patient_path = os.path.join(class_root, '/'.join(filename_dir))
+
+    return patient_path
 
 def iterate_eeg_data(**kwargs):
     """
@@ -154,8 +163,7 @@ def handle_create_spectrograms(**kwargs):
             """
                 2. Create output dir for patient data
             """
-            filename_dir = filename.split(os.path.sep)[-4]
-            patient_path = os.path.join(class_root, filename_dir)
+            patient_path = get_patient_path(filename, class_root, curr_class)
             clean_and_create(patient_path)
 
             """
