@@ -12,6 +12,7 @@ import mne
 import glob
 import argparse
 import pandas
+import shutil
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ PD_PATH = r'.*sub-pd\d{1,2}.*'
 INTERVAL = 2560
 FREQUENCY = 512
 M = 256
-MAX_AMP = 104
+MAX_AMP = 2
 CHANNEL_COUNT = 40
 
 def handle_arguments():
@@ -41,7 +42,7 @@ def handle_arguments():
     """
     parser = argparse.ArgumentParser(description='Split EEG data preprocess and create spectrograms')
 
-    parser.add_argument('-c', '--class', dest='class', choices=['PD', 'NONPD', 'ALL'],
+    parser.add_argument('-c', '--class', dest='classes', choices=['PD', 'NONPD', 'ALL'],
             help='Flag used to determine what class type we want to cretae spectrogram images for')
 
     args = parser.parse_args()
@@ -66,11 +67,64 @@ def clean_and_create(path):
     :param path: directory path to clean and create
     """
     if os.path.isdir(path):
-        shutil.rmtree(path, recursive=True)
+        shutil.rmtree(path, ignore_errors=True)
 
     os.mkdir(path)
 
-def handle_create_spectrograms(state, root_path):
+def load_data(filename):
+    """
+    Function used to load EEG data
+    :param filename: filename of .bdf file we want to read in
+    :return data: the raw date of given filename
+    """
+    #raw_data = mne.io.read_raw_bdf(filename, preload=True)
+    raw_data = mne.io.read_raw_bdf(filename)
+
+    """
+        Informative parameters
+
+        sample_freq = raw_data.info["sfreq"]
+        channel_num = raw_data.info["nchan"]
+        channel_names = raw_data.ch_names
+    """
+    #data = raw_data.to_data_frame()
+    return raw_data
+
+def iterate_eeg_data(**kwargs):
+    """
+    Function used to iterate through EEG data and generate spectrogram images
+    """
+    counter = 0
+    raw_data = kwargs["data"].copy()
+    kwargs["data"].load_data()
+    data = kwargs["data"].to_data_frame()
+    channel_names = raw_data.ch_names
+    fs = raw_data.info["sfreq"]
+
+    for channel in channel_names:
+        # Create channel output directory and iterate through all channels
+        channel_path = os.path.join(kwargs["output_dir"], channel)
+        clean_and_create(channel_path)
+
+        channel_data = data[channel].values
+        size = len(channel_data)
+
+        # TODO: Need to determine dynamic way to iterate data
+        i = 0
+        j = 2048
+        move = 1024
+        while j < size:
+            sub_channel_data = channel_data[i:j]
+            output_file = os.path.join(channel_path, str(counter))
+
+            generate_stft_from_data(fs=fs, m=M, sub_data=sub_channel_data, max_amp=MAX_AMP, output_filepath=output_file)
+
+            i += move
+            j += move
+            counter += 1
+
+
+def handle_create_spectrograms(**kwargs):
     """
     Function used to handle creating spectrogram images
     :param state: variable denoting what spectrograms to create
@@ -79,31 +133,59 @@ def handle_create_spectrograms(state, root_path):
     """
     class_list = []
 
-    if (state == 'ALL'):
+    if (kwargs["state"] == 'ALL'):
         class_list = ['NONPD', 'PD']
     else:
-        class_list = [state]
+        class_list = [kwargs["state"]]
 
-    # need to check if output directories exist
-    if os.path.isdir(root_path):
-        clean_and_create(root_path)
+    # need to check if output directories exist, create new
+    clean_and_create(kwargs["root_path"])
 
-def generate_stft_from_data(fs, m, max_amp, sub_data, output_filepath):
+    for curr_class in class_list:
+        # Make directory for class (e.g., PD, NONPD)
+        class_root = os.path.join(kwargs["root_path"], curr_class)
+        clean_and_create(class_root)
+
+        # need to read every patient EEG reading
+        for filename in kwargs["all_files"][curr_class]:
+            """
+                1. Need to load in the data
+            """
+            data = load_data(filename)
+
+            """
+                2. Create output dir for patient data
+            """
+            filename_dir = filename.split(os.path.sep)[-4]
+            patient_path = os.path.join(class_root, filename_dir)
+            clean_and_create(patient_path)
+
+            """
+                3. Create spectrogram images from the data
+            """
+            iterate_eeg_data(data=data, output_dir=patient_path)
+
+def generate_stft_from_data(**kwargs):
     """
     Function use to generate Fast-Time Fourier Transform (stft) from data
     """
-    noverlap = math.floor(m * 0.9)
-    nfft = m
+    noverlap = math.floor(kwargs["m"] * 0.9)
+    nfft = kwargs["m"]
 
-    f, t, Zxx = signal.stft(sub_data, fs, window='blackman', nperseg=m, noverlap=noverlap, nfft=nfft)
+    f, t, Zxx = signal.stft(kwargs["sub_data"], kwargs["fs"], window='blackman',
+                            nperseg=kwargs["m"], noverlap=noverlap, nfft=nfft)
 
-    plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=max_amp)
-    # plt.set_cmap('jet')
-    plt.title('STFT Magnitude')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-
-    plt.savefig(output_filepath)
+    try:
+        plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=kwargs["max_amp"])
+        # plt.set_cmap('jet')
+        plt.title('STFT Magnitude')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        plt.savefig(kwargs["output_filepath"])
+        plt.clf()
+    except FloatingPointError as e:
+        print('Caught divide by 0 error: {0}'.format(kwargs["output_filepath"]))
+        return
 
 def generate_spectrogram_from_data(fs, m, data, output_filepath):
     """
@@ -150,29 +232,13 @@ def main():
     """
         3. Handle generation of spectrogram images
     """
-    handle_create_spectrograms(args.class, SPECTROGRAM_ROOT)
+    all_files = {
+        "NONPD": nonpd_list,
+        "PD": pd_list
+    }
+    handle_create_spectrograms(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
-    raw_data = mne.io.read_raw_bdf(TEST_FILE, preload=True)
-    the_data = np.array(raw_data.get_data())
-    print(raw_data.info)
-    print(raw_data.annotations)
-    print(the_data[0])
-    data = raw_data.to_data_frame()
-    sample_freq = raw_data.info["sfreq"]
-    channel_num = raw_data.info["nchan"]
-    channel_names = raw_data.ch_names
-    print(data.head())
-    print(data.info())
-
-    curr_channel = data[channel_names[0]]
-    values = curr_channel.values
-    print('Successful read')
-
-    # generate_spectrogram_from_data(FREQUENCY, M, values, 'testimage')
-    generate_stft_from_data(FREQUENCY, M, MAX_AMP, values[:2560], 'testimage')
-    # fig = raw_data.plot(duration=3, n_channels=40, show=True, color='k')
-    # plt.show()
-
+    exit(0)
 
 if __name__ == '__main__':
     main()
