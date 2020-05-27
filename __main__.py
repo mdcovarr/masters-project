@@ -77,17 +77,15 @@ def load_data(filename):
     :param filename: filename of .bdf file we want to read in
     :return data: the raw date of given filename
     """
-    #raw_data = mne.io.read_raw_bdf(filename, preload=True)
     raw_data = mne.io.read_raw_bdf(filename)
 
     """
         Informative parameters
 
-        sample_freq = raw_data.info["sfreq"]
-        channel_num = raw_data.info["nchan"]
-        channel_names = raw_data.ch_names
+        raw_data.info["sfreq"]
+        raw_data.info["nchan"]
+        raw_data.ch_names
     """
-    #data = raw_data.to_data_frame()
     return raw_data
 
 def iterate_eeg_data(**kwargs):
@@ -177,11 +175,13 @@ def generate_stft_from_data(**kwargs):
 
     try:
         plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=kwargs["max_amp"])
+        fig = plt.gcf()
+        fig.set_size_inches(2, 2)
         # plt.set_cmap('jet')
-        plt.title('STFT Magnitude')
-        plt.ylabel('Frequency [Hz]')
-        plt.xlabel('Time [sec]')
-        plt.savefig(kwargs["output_filepath"])
+        # plt.title('STFT Magnitude')
+        # plt.ylabel('Frequency [Hz]')
+        # plt.xlabel('Time [sec]')
+        plt.savefig(kwargs["output_filepath"], bbox_inches='tight', pad_inches=0, dpi=64)
         plt.clf()
     except FloatingPointError as e:
         print('Caught divide by 0 error: {0}'.format(kwargs["output_filepath"]))
