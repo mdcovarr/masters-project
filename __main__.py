@@ -6,6 +6,24 @@
     --------------------------
     High Pass Filter: 0
     Low Pass Filter: 104
+
+
+    Useful Information
+
+    BDF file detected
+    Setting channel info structure...
+    Creating raw.info structure...
+    <Info | 7 non-empty values
+    bads: []
+    ch_names: Fp1, AF3, F7, F3, FC1, FC5, T7, C3, CP1, CP5, P7, P3, Pz, PO3, ...
+    chs: 40 EEG, 1 STIM
+    custom_ref_applied: False
+    highpass: 0.0 Hz
+    lowpass: 104.0 Hz
+    meas_date: 2011-02-04 11:50:44 UTC
+    nchan: 41
+    projs: []
+    sfreq: 512.0 Hz
 """
 
 import mne
@@ -44,6 +62,8 @@ def handle_arguments():
 
     parser.add_argument('-c', '--class', dest='classes', choices=['PD', 'NONPD', 'ALL'],
             help='Flag used to determine what class type we want to cretae spectrogram images for')
+    parser.add_argument('-t', '--test', dest='test',
+            help='Flag used to test software. Thus, only a single file will be analyzed')
 
     args = parser.parse_args()
 
@@ -117,6 +137,7 @@ def iterate_eeg_data(**kwargs):
         size = len(channel_data)
 
         # TODO: Need to determine dynamic way to iterate data
+
         i = 0
         j = 2048
         move = 1024
@@ -129,6 +150,45 @@ def iterate_eeg_data(**kwargs):
             i += move
             j += move
             counter += 1
+
+def handle_morlet_wavelet_transform(**kwargs):
+    """
+    Function used to handle the creating of spectrogram images
+    using wavelet transform
+    """
+    class_list = []
+
+    if (kwargs["state"] == 'ALL'):
+        class_list = ['NONPD', 'PD']
+    else:
+        class_list = [kwargs["state"]]
+
+    # need to check if output directories exist, create new
+    clean_and_create(kwargs["root_path"])
+
+    for curr_class in class_list:
+        # Make directory for class (e.g., PD, NONPD)
+        class_root = os.path.join(kwargs["root_path"], curr_class)
+        clean_and_create(class_root)
+
+        # need to read every patient EEG reading
+        for filename in kwargs["all_files"][curr_class]:
+            """
+                1. Need to load in the data
+            """
+            data = load_data(filename)
+
+            """
+                2. Create output dir for patient data
+            """
+            patient_path = get_patient_path(filename, class_root, curr_class)
+            clean_and_create(patient_path)
+
+            """
+                3. Create spectrogram images from the data
+            """
+            iterate_eeg_data(data=data, output_dir=patient_path)
+
 
 
 def handle_create_spectrograms(**kwargs):
@@ -261,12 +321,15 @@ def main():
     }
 
     """
-        4. TODO: Can separate each PD patient to it's respective ON Medication and OFF medication recordings
+        4. Can separate each PD patient to it's respective ON Medication and OFF medication recordings
     """
     pd_patient_list = separate_data_per_paient(pd_list, 'sub-pd')
 
+    all_files["PD"] = pd_patient_list
+
     # Function used to create spectrogram's
     # handle_create_spectrograms(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+    handle_morlet_wavelet_transform(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
     exit(0)
 
