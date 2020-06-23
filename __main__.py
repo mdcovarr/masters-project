@@ -212,6 +212,21 @@ def generate_spectrogram_from_data(fs, m, data, output_filepath):
         print('Caught divide by 0 error: {0}'.format(output_filepath))
         return
 
+def separate_data_per_paient(pd_list, pattern):
+    """
+    Function used to group together the data of each PD patient per patient
+    """
+    pd_list_indexs = [3, 5, 6, 9, 11, 12, 13, 14, 16, 17, 19, 22, 23, 26, 28]
+
+    pd_patient_list = {}
+
+    for index in pd_list_indexs:
+        key = '{0}{1}'.format(pattern, index)
+
+        pd_patient_list[key] = [i for i in pd_list if key in i]
+
+    return pd_patient_list
+
 def main():
     """
     Main Entrance of script
@@ -244,7 +259,14 @@ def main():
         "NONPD": nonpd_list,
         "PD": pd_list
     }
-    handle_create_spectrograms(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+
+    """
+        4. TODO: Can separate each PD patient to it's respective ON Medication and OFF medication recordings
+    """
+    pd_patient_list = separate_data_per_paient(pd_list, 'sub-pd')
+
+    # Function used to create spectrogram's
+    # handle_create_spectrograms(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
     exit(0)
 
