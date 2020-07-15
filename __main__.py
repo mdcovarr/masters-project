@@ -48,6 +48,7 @@ import math
 import os
 import re
 from scipy import signal # imports to make spectrogram images
+from datautils import wavelet_transform
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 ROOT_PATH = os.path.join(CWD, 'data')
@@ -207,10 +208,6 @@ def stft_iterate_eeg_data(**kwargs):
                 plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
                 plt.axis('off')
 
-                # Parameters to show images. However, not needed in images for training
-                # plt.title('STFT Magnitude')
-                # plt.ylabel('Frequency [Hz]')
-                # plt.xlabel('Time [sec]')
                 figure = plt.gcf()
                 figure.set_size_inches(1.69, 1.69)
                 plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0, dpi=100)
@@ -382,88 +379,8 @@ def handle_test(**kwargs):
             evoked.plot();
             exit(0)
 
-def handle_create_spectrograms(**kwargs):
-    """
-    Function used to handle creating spectrogram images
-    :param state: variable denoting what spectrograms to create
-    :param root_path: root path to output specogram images
-    :return: True if successful, False otherwise
-    """
-    class_list = []
 
-    if (kwargs["state"] == 'ALL'):
-        class_list = ['NONPD', 'PD']
-    else:
-        class_list = [kwargs["state"]]
-
-    # need to check if output directories exist, create new
-    clean_and_create(kwargs["root_path"])
-
-    for curr_class in class_list:
-        # Make directory for class (e.g., PD, NONPD)
-        class_root = os.path.join(kwargs["root_path"], curr_class)
-        clean_and_create(class_root)
-
-        # need to read every patient EEG reading
-        for filename in kwargs["all_files"][curr_class]:
-            """
-                1. Need to load in the data
-            """
-            data = load_data(filename)
-
-            """
-                2. Create output dir for patient data
-            """
-            patient_path = get_patient_path(filename, class_root, curr_class)
-            clean_and_create(patient_path)
-
-            """
-                3. Create spectrogram images from the data
-            """
-            iterate_eeg_data(data=data, output_dir=patient_path)
-
-def generate_stft_from_data(**kwargs):
-    """
-    Function use to generate Fast-Time Fourier Transform (stft) from data
-    """
-    noverlap = math.floor(kwargs["m"] * 0.9)
-    nfft = kwargs["m"]
-
-    f, t, Zxx = signal.stft(kwargs["sub_data"], kwargs["fs"], window='blackman',
-                            nperseg=kwargs["m"], noverlap=noverlap, nfft=nfft)
-
-    try:
-        plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=kwargs["max_amp"])
-        fig = plt.gcf()
-        fig.set_size_inches(2, 2)
-        # plt.set_cmap('jet')
-        # plt.title('STFT Magnitude')
-        # plt.ylabel('Frequency [Hz]')
-        # plt.xlabel('Time [sec]')
-        plt.savefig(kwargs["output_filepath"], bbox_inches='tight', pad_inches=0, dpi=64)
-        plt.clf()
-    except FloatingPointError as e:
-        print('Caught divide by 0 error: {0}'.format(kwargs["output_filepath"]))
-        return
-
-def generate_spectrogram_from_data(fs, m, data, output_filepath):
-    """
-    Function used to generate spectrogram images
-    """
-    overlap = math.floor(m * 0.9)
-
-    f, t, Sxx = signal.spectrogram(data, fs, noverlap=overlap, window=signal.tukey(m, 0.25))
-
-    try:
-        plt.pcolormesh(t, f, np.log10(Sxx))
-        plt.set_cmap('jet')
-        plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0)
-        plt.clf()
-    except FloatingPointError as e:
-        print('Caught divide by 0 error: {0}'.format(output_filepath))
-        return
-
-def separate_data_per_paient(pd_list, pattern):
+def separate_data_per_patient(pd_list, pattern):
     """
     Function used to group together the data of each PD patient per patient
     """
@@ -514,13 +431,16 @@ def main():
     """
         4. Can separate each PD patient to it's respective ON Medication and OFF medication recordings
     """
-    pd_patient_list = separate_data_per_paient(pd_list, 'sub-pd')
+    pd_patient_list = separate_data_per_patient(pd_list, 'sub-pd')
 
     all_files["PD"] = pd_patient_list
 
-    # Function used to create spectrogram's
+    # Function used for the short time fourier transform
     if args.stft:
         handle_stft(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+
+    if args.wavelet:
+        handle_wavelet(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
     if args.test:
         handle_test(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
