@@ -16,6 +16,13 @@
     <Info | 7 non-empty values
     bads: []
     ch_names: Fp1, AF3, F7, F3, FC1, FC5, T7, C3, CP1, CP5, P7, P3, Pz, PO3, ...
+
+    'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
+    'Pz', 'PO3', 'O1', 'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8',
+    'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2', 'Fz', 'Cz', 'EXG1', 'EXG2', 'EXG3',
+    'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8', 'Status'
+
+
     chs: 40 EEG, 1 STIM
     custom_ref_applied: False
     highpass: 0.0 Hz
@@ -24,6 +31,9 @@
     nchan: 41
     projs: []
     sfreq: 512.0 Hz
+    --------------------------
+
+    Images are created size: 496 x 369
 """
 
 import mne
@@ -47,11 +57,21 @@ TEST_FILE = './data/sub-hc1/ses-hc/eeg/sub-hc1_ses-hc_task-rest_eeg.bdf'
 NONPD_PATH = r'.*sub-hc\d{1,2}.*'
 PD_PATH = r'.*sub-pd\d{1,2}.*'
 
+EXCLUDED_CHANNELS = ['Status']
+MY_DPI = 192
+
 INTERVAL = 2560
 FREQUENCY = 512
 M = 256
 MAX_AMP = 2
 CHANNEL_COUNT = 40
+
+"""
+    Wavelet Transform Parameters
+"""
+W = 6.
+FREQ = np.linspace(1, FREQUENCY/2, 100)
+WIDTHS = W * FREQUENCY / (2 * FREQ * np.pi)
 
 def handle_arguments():
     """
@@ -62,8 +82,10 @@ def handle_arguments():
 
     parser.add_argument('-c', '--class', dest='classes', choices=['PD', 'NONPD', 'ALL'],
             help='Flag used to determine what class type we want to cretae spectrogram images for')
-    parser.add_argument('-t', '--test', dest='test',
+    parser.add_argument('-t', '--test', dest='test', action="store_true", default=False,
             help='Flag used to test software. Thus, only a single file will be analyzed')
+    parser.add_argument('-s', '--stft', dest='stft', action='store_true', default=False,
+            help='Flag used to utilize the short-time fourier transform in data processing')
 
     args = parser.parse_args()
 
@@ -95,9 +117,9 @@ def load_data(filename):
     """
     Function used to load EEG data
     :param filename: filename of .bdf file we want to read in
-    :return data: the raw date of given filename
+    :return raw: the raw data of given filename
     """
-    raw_data = mne.io.read_raw_bdf(filename)
+    raw = mne.io.read_raw_bdf(filename, preload=True, stim_channel='auto', verbose=False)
 
     """
         Informative parameters
@@ -106,7 +128,8 @@ def load_data(filename):
         raw_data.info["nchan"]
         raw_data.ch_names
     """
-    return raw_data
+
+    return raw
 
 def get_patient_path(filename, class_root, label):
     """
@@ -138,18 +161,64 @@ def iterate_eeg_data(**kwargs):
 
         # TODO: Need to determine dynamic way to iterate data
 
-        i = 0
-        j = 2048
-        move = 1024
-        while j < size:
-            sub_channel_data = channel_data[i:j]
-            output_file = os.path.join(channel_path, str(counter))
+def stft_iterate_eeg_data(**kwargs):
+    """
+    Function to iterate data and create stft spectrogram images
+    """
+    # Data to generate STFT for.
+    raw_data = kwargs["data"].copy()
+    kwargs["data"].load_data()
+    data = kwargs["data"].to_data_frame()
 
-            generate_stft_from_data(fs=fs, m=M, sub_data=sub_channel_data, max_amp=MAX_AMP, output_filepath=output_file)
+    # Get list of channel names
+    channel_names = raw_data.ch_names
 
-            i += move
-            j += move
-            counter += 1
+    # Sample Frequency
+    fs = int(raw_data.info["sfreq"])
+
+    # STFT Parameters
+    segment_size = 2048 # 4 seconds
+    amp = 1 * np.sqrt(2)
+
+
+    for channel in channel_names:
+        if channel in EXCLUDED_CHANNELS:
+            continue
+        # Create channel output directory and iterate through all channels
+        channel_path = os.path.join(kwargs["output_dir"], channel)
+        clean_and_create(channel_path)
+
+        # counter for image names e.g. ~/masters-project/spectrogram-images/NONPD/sub-hc4/ses-hc/Fp1/0'
+        image_counter = 0
+
+        channel_data = data[channel].values
+        size = len(channel_data)
+        segments = int(size // segment_size)
+
+        for index in range(segments):
+            lower_point = index * segment_size
+            upper_point = lower_point + segment_size
+            current_segment = channel_data[lower_point : upper_point]
+
+            f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=256, boundary=None)
+
+            try:
+                output_filepath = os.path.join(channel_path, str(image_counter))
+                plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
+                plt.axis('off')
+
+                # Parameters to show images. However, not needed in images for training
+                # plt.title('STFT Magnitude')
+                # plt.ylabel('Frequency [Hz]')
+                # plt.xlabel('Time [sec]')
+                figure = plt.gcf()
+                figure.set_size_inches(1.69, 1.69)
+                plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0, dpi=100)
+                plt.clf()
+
+                image_counter += 1
+            except FloatingPointError as e:
+                print('Caught divide by 0 error: {0}'.format(output_filepath))
 
 def handle_morlet_wavelet_transform(**kwargs):
     """
@@ -189,7 +258,129 @@ def handle_morlet_wavelet_transform(**kwargs):
             """
             iterate_eeg_data(data=data, output_dir=patient_path)
 
+def handle_stft(**kwargs):
+    """
+    Function used to handle the creation of spectrogram images
+    """
+    class_list = []
 
+    if (kwargs["state"] == 'ALL'):
+        class_list = ['NONPD', 'PD']
+    else:
+        class_list = [kwargs["state"]]
+
+    # need to check if output directories exist, create new
+    clean_and_create(kwargs["root_path"])
+
+    for curr_class in class_list:
+        # Make directory for class (e.g., PD, NONPD)
+        class_root = os.path.join(kwargs["root_path"], curr_class)
+        clean_and_create(class_root)
+
+        # need to read every patient EEG reading
+        for filename in kwargs["all_files"][curr_class]:
+            """
+                1. Need to load in the data
+            """
+            data = load_data(filename)
+
+            """
+                2. Create output dir for patient data
+            """
+            patient_path = get_patient_path(filename, class_root, curr_class)
+            clean_and_create(patient_path)
+
+            """
+                3. Create spectrogram images from the data
+            """
+            stft_iterate_eeg_data(data=data, output_dir=patient_path)
+
+
+def handle_test(**kwargs):
+    """
+    Function to run test graphs
+    """
+    class_list = []
+
+    if (kwargs["state"] == 'ALL'):
+        class_list = ['NONPD', 'PD']
+    else:
+        class_list = [kwargs["state"]]
+
+    # need to check if output directories exist, create new
+    clean_and_create(kwargs["root_path"])
+
+    for curr_class in class_list:
+        # Make directory for class (e.g., PD, NONPD)
+        class_root = os.path.join(kwargs["root_path"], curr_class)
+        clean_and_create(class_root)
+
+        # need to read every patient EEG reading
+        for filename in kwargs["all_files"][curr_class]:
+            """
+                1. Need to load in the data
+            """
+            raw = load_data(filename)
+
+            """
+                Informative parameters
+
+                raw_data.info["sfreq"]
+                raw_data.info["nchan"]
+                raw_data.ch_names
+            """
+            sfreq = raw.info['sfreq']
+            sfreq = raw.info['sfreq']
+            data, times = raw[:5, int(sfreq * 1):int(sfreq * 10)]
+
+            fig = plt.subplots(figsize=(10,8))
+            plt.plot(times, data.T);
+            plt.xlabel('Seconds')
+            plt.ylabel('mu V')
+            plt.title('Channels: 1-5');
+            plt.legend(raw.ch_names[:5]);
+            plt.show()
+
+            raw.filter(1.0, 60.0, fir_design='firwin', skip_by_annotation='edge')
+            data_f, times_f = raw[:5, int(sfreq * 1):int(sfreq * 10)]
+
+            fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15, 10))
+
+            ax1.plot(times, data.T);
+            ax1.set_title('Before Filter')
+            ax1.set_xlabel('Seconds')
+            ax1.set_ylabel('mu V')
+
+            ax2.plot(times_f, data_f.T);
+            ax2.set_title('After Filter')
+            ax2.set_xlabel('Seconds')
+
+            plt.legend(raw.ch_names[:5], loc=1);
+            plt.show()
+
+            raw.plot(duration=60, block=True)
+
+            raw.plot_psd(tmax=np.inf, fmax=250)
+
+            picks = mne.pick_types(raw.info, meg=False, eeg=True, stim=False, eog=False,
+                        exclude='bads')
+
+            # events.shap|e
+            events = mne.find_events(raw, shortest_event=0, stim_channel='Status', verbose=False)
+
+            epochs = mne.Epochs(raw, events, event_id, tmin, tmax, proj=True, picks=picks,
+                            baseline=None, preload=True, verbose=False)
+
+            # remove channels that aren't eeg electrodes we care about
+            epochs.drop_channels(ch_names=['Nose', 'REOG', 'LEOG', 'IEOG', 'SEOG', 'M1', 'M2','EXG8'])
+
+            # Export data in tabular structure as a pandas DataFrame.
+            epochs_df = epochs.to_data_frame()
+
+
+            evoked = epochs['target'].average()
+            evoked.plot();
+            exit(0)
 
 def handle_create_spectrograms(**kwargs):
     """
@@ -328,8 +519,13 @@ def main():
     all_files["PD"] = pd_patient_list
 
     # Function used to create spectrogram's
-    # handle_create_spectrograms(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
-    handle_morlet_wavelet_transform(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+    if args.stft:
+        handle_stft(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+
+    if args.test:
+        handle_test(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+
+    #handle_morlet_wavelet_transform(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
     exit(0)
 
