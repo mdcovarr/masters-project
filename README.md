@@ -40,3 +40,10 @@ NON PD patients
 #### Goal
 * To predict/classify EEG Readings that contain biomarker indicators of Parkinson's Disease
 as appose to EEG reading that do not contain signs of Parkinson's Disease
+
+## Resources
+```
+https://bigdatawg.nist.gov/HackathonTutorial.html
+
+https://raphaelvallat.com/bandpower.html
+```
