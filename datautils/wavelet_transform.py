@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import math
 import os
 import re
-import scipy
+from scipy import signal
 
 class WaveletTransform(object):
     """
@@ -131,6 +131,8 @@ class WaveletTransform(object):
 
         # Wavelet Transform Parameters
         segment_size = 2048 # 4 seconds
+        w = 6.0
+        widths = np.arange(1, 31)
 
         for channel in channel_names:
             if channel == 'Status':
@@ -148,11 +150,28 @@ class WaveletTransform(object):
 
             channel_data = data[channel].values
             size = len(channel_data)
-            segment = int(size // segment_size)
+            segments = int(size // segment_size)
 
             for index in range(segments):
                 lower_point = index * segment_size
                 upper_point = lower_point + segment_size - 1
                 current_segment = channel_data[lower_point : upper_point]
 
+                t, dt = np.linspace(0, 4, 2048, retstep=True)
+                fs = 1/dt
+                freq = np.linspace(1, fs/2, 100)
                 # Need to perform the wavelet transform
+                cwtm = signal.cwt(current_segment, signal.morlet2, widths, w=w)
+
+                plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis', shading='gouraud')
+                plt.show()
+                exit(0)
+
+if __name__ == '__main__':
+    M = 2048
+    s = 64
+    w = 5
+    wavelet = signal.morlet2(M, s, w)
+    plt.plot(abs(wavelet))
+    plt.show()
+
