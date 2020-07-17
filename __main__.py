@@ -53,6 +53,7 @@ from datautils import wavelet_transform
 CWD = os.path.dirname(os.path.realpath(__file__))
 ROOT_PATH = os.path.join(CWD, 'data')
 SPECTROGRAM_ROOT = os.path.join(CWD, 'spectrogram-images')
+WAVELET_ROOT = os.path.join(CWD, 'wavelet-images')
 PATTERN = os.path.join(ROOT_PATH, '**', '*.bdf')
 TEST_FILE = './data/sub-hc1/ses-hc/eeg/sub-hc1_ses-hc_task-rest_eeg.bdf'
 NONPD_PATH = r'.*sub-hc\d{1,2}.*'
@@ -87,6 +88,8 @@ def handle_arguments():
             help='Flag used to test software. Thus, only a single file will be analyzed')
     parser.add_argument('-s', '--stft', dest='stft', action='store_true', default=False,
             help='Flag used to utilize the short-time fourier transform in data processing')
+    parser.add_argument('-w', '--wave', dest='wavelet', action='store_true', default=False,
+            help='Flag used to utilize wavelet transform in data processing')
 
     args = parser.parse_args()
 
@@ -222,23 +225,21 @@ def handle_morlet_wavelet_transform(**kwargs):
     Function used to handle the creating of spectrogram images
     using wavelet transform
     """
-    class_list = []
+    wavelet_helper = wavelet_transform.WaveletTransform(**kwargs)
+    wavelet_helper.generate_wavelet_transform()
 
-    if (kwargs["state"] == 'ALL'):
-        class_list = ['NONPD', 'PD']
-    else:
-        class_list = [kwargs["state"]]
+def handle_PD_patients(**kwargs):
+    """
+    Funtion used to handle PD patients specifically.
+    """
+    # Need to iterate through all patient data
+    class_root = os.path.join(kwargs['root_path'], kwargs['state'])
+    clean_and_create(class_root)
 
-    # need to check if output directories exist, create new
-    clean_and_create(kwargs["root_path"])
+    for subject_name in kwargs['all_files']['PD']:
+        subject_files = kwargs['all_files']['PD'][subject_name]
 
-    for curr_class in class_list:
-        # Make directory for class (e.g., PD, NONPD)
-        class_root = os.path.join(kwargs["root_path"], curr_class)
-        clean_and_create(class_root)
-
-        # need to read every patient EEG reading
-        for filename in kwargs["all_files"][curr_class]:
+        for filename in subject_files:
             """
                 1. Need to load in the data
             """
@@ -247,13 +248,40 @@ def handle_morlet_wavelet_transform(**kwargs):
             """
                 2. Create output dir for patient data
             """
-            patient_path = get_patient_path(filename, class_root, curr_class)
+            patient_path = get_patient_path(filename, class_root, kwargs['state'])
             clean_and_create(patient_path)
 
             """
-                3. Create spectrogram images from the data
+                3. Create Spectrogram images from the data
             """
-            iterate_eeg_data(data=data, output_dir=patient_path)
+            stft_iterate_eeg_data(data=data, output_dir=patient_path)
+
+def handle_NONPD_patients(**kwargs):
+    """
+    Function used to handle NONPD patients specifically.
+    """
+    # Make directory for class (e.g., NONPD)
+    class_root = os.path.join(kwargs["root_path"], curr_class)
+    clean_and_create(class_root)
+
+    # need to read every patient EEG reading
+    for filename in kwargs["all_files"][curr_class]:
+        """
+            1. Need to load in the data
+        """
+        data = load_data(filename)
+
+        """
+            2. Create output dir for patient data
+        """
+        patient_path = get_patient_path(filename, class_root, curr_class)
+        clean_and_create(patient_path)
+
+        """
+            3. Create spectrogram images from the data
+        """
+        stft_iterate_eeg_data(data=data, output_dir=patient_path)
+
 
 def handle_stft(**kwargs):
     """
@@ -270,28 +298,12 @@ def handle_stft(**kwargs):
     clean_and_create(kwargs["root_path"])
 
     for curr_class in class_list:
-        # Make directory for class (e.g., PD, NONPD)
-        class_root = os.path.join(kwargs["root_path"], curr_class)
-        clean_and_create(class_root)
 
-        # need to read every patient EEG reading
-        for filename in kwargs["all_files"][curr_class]:
-            """
-                1. Need to load in the data
-            """
-            data = load_data(filename)
+        if curr_class == 'PD':
+            handle_PD_patients(**kwargs)
 
-            """
-                2. Create output dir for patient data
-            """
-            patient_path = get_patient_path(filename, class_root, curr_class)
-            clean_and_create(patient_path)
-
-            """
-                3. Create spectrogram images from the data
-            """
-            stft_iterate_eeg_data(data=data, output_dir=patient_path)
-
+        if curr_class == 'NONPD':
+            handle_NONPD_patients(**kwargs)
 
 def handle_test(**kwargs):
     """
@@ -440,14 +452,11 @@ def main():
         handle_stft(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
     if args.wavelet:
-        handle_wavelet(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
+        handle_morlet_wavelet_transform(state=args.classes, root_path=WAVELET_ROOT, all_files=all_files)
 
     if args.test:
         handle_test(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
 
-    #handle_morlet_wavelet_transform(state=args.classes, root_path=SPECTROGRAM_ROOT, all_files=all_files)
-
-    exit(0)
 
 if __name__ == '__main__':
     main()
