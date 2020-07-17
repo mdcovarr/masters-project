@@ -144,27 +144,6 @@ def get_patient_path(filename, class_root, label):
 
     return patient_path
 
-def iterate_eeg_data(**kwargs):
-    """
-    Function used to iterate through EEG data and generate spectrogram images
-    """
-    counter = 0
-    raw_data = kwargs["data"].copy()
-    kwargs["data"].load_data()
-    data = kwargs["data"].to_data_frame()
-    channel_names = raw_data.ch_names
-    fs = raw_data.info["sfreq"]
-
-    for channel in channel_names:
-        # Create channel output directory and iterate through all channels
-        channel_path = os.path.join(kwargs["output_dir"], channel)
-        clean_and_create(channel_path)
-
-        channel_data = data[channel].values
-        size = len(channel_data)
-
-        # TODO: Need to determine dynamic way to iterate data
-
 def stft_iterate_eeg_data(**kwargs):
     """
     Function to iterate data and create stft spectrogram images
