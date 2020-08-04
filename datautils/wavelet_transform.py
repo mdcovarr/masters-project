@@ -9,6 +9,9 @@ import math
 import os
 import re
 from scipy import signal
+from scipy.fftpack import fft, ifft
+import pywt
+from PyEMD import EMD
 
 class WaveletTransform(object):
     """
@@ -129,10 +132,11 @@ class WaveletTransform(object):
         # Sample Frequency
         fs = int(raw_data.info['sfreq'])
 
+        # Status channel
+        status_data = data['Status'].values
+
         # Wavelet Transform Parameters
-        segment_size = 2048 # 4 seconds
-        w = 6.0
-        widths = np.arange(1, 31)
+        segment_size = 1024 # 2 seconds
 
         for channel in channel_names:
             if channel == 'Status':
@@ -151,27 +155,69 @@ class WaveletTransform(object):
             channel_data = data[channel].values
             size = len(channel_data)
             segments = int(size // segment_size)
+            image_counter = 0
 
             for index in range(segments):
                 lower_point = index * segment_size
-                upper_point = lower_point + segment_size - 1
+                upper_point = lower_point + segment_size
                 current_segment = channel_data[lower_point : upper_point]
 
-                t, dt = np.linspace(0, 4, 2048, retstep=True)
-                fs = 1/dt
-                freq = np.linspace(1, fs/2, 100)
-                # Need to perform the wavelet transform
-                cwtm = signal.cwt(current_segment, signal.morlet2, widths, w=w)
+                # EMD Preprocessing
+                emd = EMD(max_imfs=2)
+                t = np.linspace(0, 2, 1024)
+                IMF = emd.emd(current_segment, t)
+                N = IMF.shape[0] + 1
 
-                plt.pcolormesh(t, freq, np.abs(cwtm), cmap='viridis', shading='gouraud')
+                """
+                    For testing purposes of data
+
+                # Plot current channel information
+                plt.subplot(N,1,1)
+                plt.plot(t, current_segment, 'r')
+
+                for n, imf in enumerate(IMF):
+                    plt.subplot(N,1,n+2)
+                    plt.plot(t, imf, 'g')
+                    plt.title("IMF "+str(n+1))
+                    plt.xlabel("Time [s]")
+
+                plt.tight_layout()
+                plt.savefig('simple_example')
                 plt.show()
-                exit(0)
 
-if __name__ == '__main__':
-    M = 2048
-    s = 64
-    w = 5
-    wavelet = signal.morlet2(M, s, w)
-    plt.plot(abs(wavelet))
-    plt.show()
+                sig = 0
+                for n, imf in enumerate(IMF):
+                    if n == 4:
+                        break
+                    else:
+                        sig += imf
 
+                plt.plot(t, sig)
+                plt.show()
+                """
+
+                scale = 32
+                # cmor0.4-1.0
+                coef, freq = pywt.cwt(np.array(sig), np.arange(1, scale + 1), 'cmor0.4-1.0')
+
+                vmin = abs(coef).min()
+                vmax = abs(coef).max()
+
+                plt.imshow(abs(coef), extent=[0, 2, 2, 32], cmap='jet', aspect='auto',
+                        vmax=vmax, vmin=vmin)
+                plt.show()
+
+                """
+                Remove extra content from graph
+                """
+                try:
+                    output_file = os.path.join(channel_path, str(image_counter))
+                    plt.pcolormesh(t, freq, abs(coef), vmin=vmin, vmax=vmax, shading='gouraud')
+                    plt.axis('off')
+                    figure = plt.gcf()
+                    plt.savefig(output_file, bbox_inches='tight', pad_inches=0, dpi=100)
+                    plt.clf()
+
+                    image_counter += 1
+                except FloatingPointError as e:
+                    print('Caught divide by 0 error: {0}'.format(output_filepath))
