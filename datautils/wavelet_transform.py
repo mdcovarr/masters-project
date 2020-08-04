@@ -63,6 +63,8 @@ class WaveletTransform(object):
                 1. Need to lead in the data
             """
             raw = mne.io.read_raw_bdf(filename, preload=True, stim_channel='auto', verbose=False)
+            raw.notch_filter(np.arange(60, 241, 60))
+            raw.filter(1.0, 60.0, fir_design='firwin')
 
             """
                 2. Create output dir for patient data
@@ -100,6 +102,8 @@ class WaveletTransform(object):
                     1. Need to load in the data
                 """
                 raw = mne.io.read_raw_bdf(filename, preload=True, stim_channel='auto', verbose=False)
+                raw.notch_filter(np.arange(60, 241, 60))
+                raw.filter(1.0, 60.0, fir_design='firwin')
 
                 """
                     2. Create output dir for patient data
@@ -162,43 +166,9 @@ class WaveletTransform(object):
                 upper_point = lower_point + segment_size
                 current_segment = channel_data[lower_point : upper_point]
 
-                # EMD Preprocessing
-                emd = EMD(max_imfs=2)
-                t = np.linspace(0, 2, 1024)
-                IMF = emd.emd(current_segment, t)
-                N = IMF.shape[0] + 1
-
-                """
-                    For testing purposes of data
-
-                # Plot current channel information
-                plt.subplot(N,1,1)
-                plt.plot(t, current_segment, 'r')
-
-                for n, imf in enumerate(IMF):
-                    plt.subplot(N,1,n+2)
-                    plt.plot(t, imf, 'g')
-                    plt.title("IMF "+str(n+1))
-                    plt.xlabel("Time [s]")
-
-                plt.tight_layout()
-                plt.savefig('simple_example')
-                plt.show()
-
-                sig = 0
-                for n, imf in enumerate(IMF):
-                    if n == 4:
-                        break
-                    else:
-                        sig += imf
-
-                plt.plot(t, sig)
-                plt.show()
-                """
-
                 scale = 32
                 # cmor0.4-1.0
-                coef, freq = pywt.cwt(np.array(sig), np.arange(1, scale + 1), 'cmor0.4-1.0')
+                coef, freq = pywt.cwt(np.array(current_segment), np.arange(1, scale + 1), 'cmor0.4-1.0')
 
                 vmin = abs(coef).min()
                 vmax = abs(coef).max()
@@ -212,6 +182,7 @@ class WaveletTransform(object):
                 """
                 try:
                     output_file = os.path.join(channel_path, str(image_counter))
+                    t = np.linspace(0, 2, 1024)
                     plt.pcolormesh(t, freq, abs(coef), vmin=vmin, vmax=vmax, shading='gouraud')
                     plt.axis('off')
                     figure = plt.gcf()
@@ -221,3 +192,44 @@ class WaveletTransform(object):
                     image_counter += 1
                 except FloatingPointError as e:
                     print('Caught divide by 0 error: {0}'.format(output_filepath))
+
+    def apply_emd(self):
+        """
+        Function used to apply EMD to data in order to remove baseline wanderer if needed
+        """
+        pass
+
+        """
+        # EMD Preprocessing
+        emd = EMD(max_imfs=2)
+        t = np.linspace(0, 2, 1024)
+        IMF = emd.emd(current_segment, t)
+        N = IMF.shape[0] + 1
+
+            # For testing purposes of data
+
+        # Plot current channel information
+        plt.subplot(N,1,1)
+        plt.plot(t, current_segment, 'r')
+
+        for n, imf in enumerate(IMF):
+            plt.subplot(N,1,n+2)
+            plt.plot(t, imf, 'g')
+            plt.title("IMF "+str(n+1))
+            plt.xlabel("Time [s]")
+
+        plt.tight_layout()
+        plt.savefig('simple_example')
+        plt.show()
+
+        sig = 0
+        for n, imf in enumerate(IMF):
+            if n == 4:
+                break
+            else:
+                sig += imf
+
+        plt.plot(t, sig)
+        plt.show()
+        """
+
