@@ -1,5 +1,7 @@
 # Location where raw data is set
 data/
+wavelet-images/
+stft-images/
 
 # vscode
 .vscode/
