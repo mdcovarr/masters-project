@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import math
+import pandas
 import os
 import re
 from scipy import signal
@@ -80,7 +81,7 @@ class WaveletTransform(object):
             """
                 3. Create transform images
             """
-            self.iterate_eeg_data(data=raw, output_dir=patient_path)
+            self.eeg_to_coefficients(data=raw, output_dir=patient_path)
 
     def handle_PD_patients(self):
         """
@@ -120,7 +121,7 @@ class WaveletTransform(object):
                 """
                     3. Create Spectrogram images from the data
                 """
-                self.iterate_eeg_data(data=raw, output_dir=patient_path)
+                self.eeg_to_coefficients(data=raw, output_dir=patient_path)
 
     def iterate_eeg_data(self, **kwargs):
         """
@@ -192,6 +193,69 @@ class WaveletTransform(object):
                     image_counter += 1
                 except FloatingPointError as e:
                     print('Caught divide by 0 error: {0}'.format(output_filepath))
+
+    def eeg_to_coefficients(self, **kwargs):
+        """
+            Function used to perform wavelet transform and save the coefficient information
+        """
+        raw_data = kwargs['data'].copy()
+        kwargs['data'].load_data()
+        data = kwargs['data'].to_data_frame()
+
+        # Get list of channel  names
+        channel_names = raw_data.ch_names
+
+        # Sample Frequency
+        fs = int(raw_data.info['sfreq'])
+
+        # Status channel
+        status_data = data['Status'].values
+
+        # Wavelet Transform Parameters
+        segment_size = 1024 # 2 seconds
+
+        for channel in channel_names:
+            if channel == 'Status':
+                continue
+
+            channel_path = os.path.join(kwargs['output_dir'], channel)
+            df = pandas.DataFrame()
+
+            if os.path.isdir(channel_path):
+                shutil.rmtree(channel_path, ignore_errors=True)
+
+            os.makedirs(channel_path)
+
+            # counter for image names
+            image_counter = 0
+
+            channel_data = data[channel].values
+            size = len(channel_data)
+            segments = int(size // segment_size)
+            image_counter = 0
+
+            for index in range(segments):
+                lower_point = index * segment_size
+                upper_point = lower_point + segment_size
+                current_segment = channel_data[lower_point : upper_point]
+
+                scales = np.arange(1, 32)
+
+                # cmor0.4-1.0
+                coefficients, frequencies = pywt.cwt(np.array(current_segment), scales, 'cmor0.4-1.0')
+
+                vmin = abs(coefficients).min()
+                vmax = abs(coefficients).max()
+
+                coefficients = abs(coefficients)
+
+                coefficients = coefficients.reshape((-1, coefficients.shape[0] * coefficients.shape[1]))
+
+                df = df.append(pandas.DataFrame(data=coefficients))
+
+            # Now we need to output to file with data
+            output_file = os.path.join(channel_path, 'data.csv')
+            df.to_csv(output_file)
 
     def apply_emd(self):
         """
