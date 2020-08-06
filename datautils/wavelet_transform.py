@@ -166,24 +166,24 @@ class WaveletTransform(object):
                 upper_point = lower_point + segment_size
                 current_segment = channel_data[lower_point : upper_point]
 
-                scale = 32
+                scales = np.arange(1, 32)
+
                 # cmor0.4-1.0
-                coef, freq = pywt.cwt(np.array(current_segment), np.arange(1, scale + 1), 'cmor0.4-1.0')
+                coef, freq = pywt.cwt(np.array(current_segment), scales, 'cmor0.4-1.0')
 
                 vmin = abs(coef).min()
                 vmax = abs(coef).max()
 
-                plt.imshow(abs(coef), extent=[0, 2, 2, 32], cmap='jet', aspect='auto',
-                        vmax=vmax, vmin=vmin)
-                plt.show()
+                coef = np.flip(coef, axis=0)
 
-                """
-                Remove extra content from graph
-                """
                 try:
                     output_file = os.path.join(channel_path, str(image_counter))
-                    t = np.linspace(0, 2, 1024)
-                    plt.pcolormesh(t, freq, abs(coef), vmin=vmin, vmax=vmax, shading='gouraud')
+
+                    plt.pcolormesh(abs(coef), cmap='jet', vmax=vmax, vmin=vmin)
+
+                    """
+                        Modifying Plot settings
+                    """
                     plt.axis('off')
                     figure = plt.gcf()
                     plt.savefig(output_file, bbox_inches='tight', pad_inches=0, dpi=100)
