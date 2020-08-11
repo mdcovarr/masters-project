@@ -3,6 +3,7 @@ data/
 wavelet-images/
 stft-images/
 datasets/
+spectrogram-images/
 
 # vscode
 .vscode/
