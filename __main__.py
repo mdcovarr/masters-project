@@ -185,6 +185,9 @@ def stft_iterate_eeg_data(**kwargs):
 
             f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=256, boundary=None)
 
+            Zxx = Zxx[0 : 32]
+            f = f[0 : 32]
+
             try:
                 output_filepath = os.path.join(channel_path, str(image_counter))
                 plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
@@ -212,7 +215,7 @@ def handle_PD_patients(**kwargs):
     Funtion used to handle PD patients specifically.
     """
     # Need to iterate through all patient data
-    class_root = os.path.join(kwargs['root_path'], kwargs['state'])
+    class_root = os.path.join(kwargs['root_path'], 'PD')
     clean_and_create(class_root)
 
     for subject_name in kwargs['all_files']['PD']:
@@ -224,10 +227,14 @@ def handle_PD_patients(**kwargs):
             """
             data = load_data(filename)
 
+            # apply filters
+            data.notch_filter(np.arange(60, 241, 60))
+            data.filter(1.0, 60.0, fir_design='firwin')
+
             """
                 2. Create output dir for patient data
             """
-            patient_path = get_patient_path(filename, class_root, kwargs['state'])
+            patient_path = get_patient_path(filename, class_root, 'PD')
             clean_and_create(patient_path)
 
             """
@@ -240,20 +247,24 @@ def handle_NONPD_patients(**kwargs):
     Function used to handle NONPD patients specifically.
     """
     # Make directory for class (e.g., NONPD)
-    class_root = os.path.join(kwargs["root_path"], curr_class)
+    class_root = os.path.join(kwargs["root_path"], 'NONPD')
     clean_and_create(class_root)
 
     # need to read every patient EEG reading
-    for filename in kwargs["all_files"][curr_class]:
+    for filename in kwargs["all_files"]['NONPD']:
         """
             1. Need to load in the data
         """
         data = load_data(filename)
 
+        # apply filters
+        data.notch_filter(np.arange(60, 241, 60))
+        data.filter(1.0, 60.0, fir_design='firwin')
+
         """
             2. Create output dir for patient data
         """
-        patient_path = get_patient_path(filename, class_root, curr_class)
+        patient_path = get_patient_path(filename, class_root, 'NONPD')
         clean_and_create(patient_path)
 
         """
