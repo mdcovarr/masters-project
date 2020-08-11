@@ -2,6 +2,7 @@
 data/
 wavelet-images/
 stft-images/
+datasets/
 
 # vscode
 .vscode/
