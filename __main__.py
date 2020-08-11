@@ -34,6 +34,9 @@
     --------------------------
 
     Images are created size: 496 x 369
+
+    NONPD Patients 16
+    PD Patients 15
 """
 
 import mne
