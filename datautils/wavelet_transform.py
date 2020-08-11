@@ -14,6 +14,8 @@ from scipy.fftpack import fft, ifft
 import pywt
 from PyEMD import EMD
 
+EXCLUDE_CHANNELS = ['Status', 'EXG1', 'EXG2', 'EXG3', 'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8']
+
 class WaveletTransform(object):
     """
     Class used to help create wavelet transform of EEG data
@@ -144,7 +146,7 @@ class WaveletTransform(object):
         segment_size = 1024 # 2 seconds
 
         for channel in channel_names:
-            if channel == 'Status':
+            if channel in EXCLUDE_CHANNELS:
                 continue
 
             channel_path = os.path.join(kwargs['output_dir'], channel)
