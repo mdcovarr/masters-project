@@ -49,8 +49,6 @@ def handle_arguments():
                         help='Flag used to determine what channel we want to create a model for')
     parser.add_argument('-s', '--set', dest='size', required=True,
                         help='Flag used to determine the amount of experiments to import for train/test data')
-    parser.add_argument('-i', '--image-size', dest='image_size', required=True,
-                        help='Flag used to determine the length and width to resize the data spectrogram images')
     parser.add_argument('-e', '--epochs', dest='epochs', required=True,
                         help='Flag used to determine the number of epochs for training')
     args = parser.parse_args()
