@@ -6,7 +6,8 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Conv3D, MaxPool3D, Conv2D, MaxPool2D, Flatten, Dense
 from tensorflow.keras.optimizers import SGD
 
 import matplotlib.pyplot as plt
@@ -98,7 +99,7 @@ def get_train_test_data(all_data_paths):
             image_files = glob.glob(os.path.join(data_path, '*'))
 
             for image_file in image_files:
-                image_src = np.array(Image.open(image_file).convert('RGB')).flatten()
+                image_src = np.array(Image.open(image_file).convert('RGB'))
 
                 data.append(image_src)
                 labels.append(int(key))
@@ -124,35 +125,36 @@ def main():
 
     data_set, labels = get_train_test_data(all_data_paths)
 
+    # Normalize dataset
+    data_set = data_set / 255.0
+    # One-Hot encode labels
+    labels = to_categorical(labels, 3)
+
     print('-------------------------\n[INFO] Building Model\n-------------------------')
 
     # split training and test data
     (trainX, testX, trainY, testY) = train_test_split(data_set, labels, test_size=0.25, random_state=42)
 
-    lb = LabelBinarizer()
-    trainY = lb.fit_transform(trainY)
-    testY = lb.transform(testY)
-
     # building model
     model = Sequential()
 
     # adding layers
-    model.add(Conv2D(32, (3, 3), input_shape=(int(args.image_size), int(args.image_size), 3), activation=ACTIVATION))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(32, (3, 3), activation=ACTIVATION))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(16, 16, input_shape=(130, 130, 3), activation=ACTIVATION))
+    model.add(MaxPool2D())
+    model.add(Conv2D(32, 16, activation=ACTIVATION))
+    model.add(MaxPool2D())
 
     model.add(Flatten())
 
-    model.add(Dense(64, activation=ACTIVATION))
+    model.add(Dense(32, activation=ACTIVATION))
 
-    # prediction layer, using softmax because we are expecting more than two outcomes (DROWSY, FOCUSED, UNFOCUSED)
+    # prediction layer, using softmax because we are expecting more than two outcomes (NONPD, PD on medication, PD off medication)
     model.add(Dense(3, activation=PREDICT_ACTIVATION))
     model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
 
     print('-------------------------\n[INFO] Train Model\n-------------------------')
 
-    history = model.fit(trainX, trainY, epochs=int(args.epochs), validation_data=(testX, testY), batch_size=300)
+    history = model.fit(trainX, trainY, epochs=int(args.epochs), validation_data=(testX, testY))
 
     print('-------------------------\n[INFO] Plot Results\n-------------------------')
 
