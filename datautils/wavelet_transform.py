@@ -83,7 +83,7 @@ class WaveletTransform(object):
             """
                 3. Create transform images
             """
-            self.eeg_to_coefficients(data=raw, output_dir=patient_path)
+            self.iterate_eeg_data(data=raw, output_dir=patient_path)
 
     def handle_PD_patients(self):
         """
@@ -123,7 +123,7 @@ class WaveletTransform(object):
                 """
                     3. Create Spectrogram images from the data
                 """
-                self.eeg_to_coefficients(data=raw, output_dir=patient_path)
+                self.iterate_eeg_data(data=raw, output_dir=patient_path)
 
     def iterate_eeg_data(self, **kwargs):
         """
