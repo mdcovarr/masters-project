@@ -22,7 +22,7 @@ import os
 ACTIVATION = 'relu'
 PREDICT_ACTIVATION = 'sigmoid'
 OPTIMIZER = 'adam'
-LOSS = 'categorical_crossentropy'
+LOSS = 'binary_crossentropy'
 METRICS = ['accuracy']
 
 CWD = os.path.dirname(os.path.realpath(__file__))
@@ -30,7 +30,8 @@ PD_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**')
 PD_OFF_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**', 'ses-off')
 PD_ON_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**', 'ses-on')
 NONPD_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'NONPD', '**')
-PATH_TO_DATASET = [PD_OFF_ROOT, PD_ON_ROOT, NONPD_ROOT]
+PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
+CLASSES = 2
 
 CHANNEL_CHOICES = [
     'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
@@ -126,7 +127,7 @@ def main():
     # Normalize dataset
     data_set = data_set / 255.0
     # One-Hot encode labels
-    labels = to_categorical(labels, 3)
+    labels = to_categorical(labels, CLASSES)
 
     print('-------------------------\n[INFO] Building Model\n-------------------------')
 
@@ -137,17 +138,18 @@ def main():
     model = Sequential()
 
     # adding layers
-    model.add(Conv2D(16, 16, input_shape=(130, 130, 3), activation=ACTIVATION))
+    model.add(Conv2D(16, 3, input_shape=(130, 130, 3), activation=ACTIVATION))
     model.add(MaxPool2D())
-    model.add(Conv2D(32, 16, activation=ACTIVATION))
+    model.add(Conv2D(32, 3, activation=ACTIVATION))
+    model.add(MaxPool2D())
+    model.add(Conv2D(64, 3, activation=ACTIVATION))
     model.add(MaxPool2D())
 
     model.add(Flatten())
 
-    model.add(Dense(32, activation=ACTIVATION))
+    model.add(Dense(500, activation=ACTIVATION))
 
-    # prediction layer, using softmax because we are expecting more than two outcomes (NONPD, PD on medication, PD off medication)
-    model.add(Dense(3, activation=PREDICT_ACTIVATION))
+    model.add(Dense(2, activation=PREDICT_ACTIVATION))
     model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
 
     print('-------------------------\n[INFO] Train Model\n-------------------------')
