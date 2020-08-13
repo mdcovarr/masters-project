@@ -10,6 +10,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers import Conv3D, MaxPool3D, Conv2D, MaxPool2D, Flatten, Dense
 from tensorflow.keras.optimizers import SGD
 
+from subprocess import check_call
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
@@ -27,12 +28,14 @@ LOSS = 'binary_crossentropy'
 METRICS = ['accuracy']
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-PD_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**')
-PD_OFF_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**', 'ses-off')
-PD_ON_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'PD', '**', 'ses-on')
-NONPD_ROOT = os.path.join(CWD, '..', 'spectrogram-images', 'NONPD', '**')
+DATA_ROOT = 'wavelet-images'
+PD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**')
+PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-off')
+PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-on')
+NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'NONPD', '**')
 PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
 CLASSES = 2
+README = 'README.md'
 
 CHANNEL_CHOICES = [
     'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
@@ -111,7 +114,6 @@ def get_train_test_data(all_data_paths, image_size):
 
     return data, labels
 
-
 def main():
     """
     Main Enterance of model
@@ -131,6 +133,13 @@ def main():
         shutil.rmtree(args.output_dir, ignore_errors=True)
 
     os.makedirs(args.output_dir)
+
+    # create README.md file for the generated information about the models
+    output_file = os.path.join(CWD, args.output_dir, README)
+    command = 'touch {0}'.format(output_file)
+    check_call(command, shell=True)
+
+    # TODO: can add metadata to the README file about parameters chosen for models
 
     """
         Need to train and save a model for each channel in CHANNEL_CHOICES
@@ -173,13 +182,39 @@ def main():
 
         print('-------------------------\n[INFO] Train Model\n-------------------------')
 
-        model.fit(trainX, trainY, epochs=int(args.epochs), validation_data=(testX, testY))
+        history = model.fit(trainX, trainY, epochs=int(args.epochs), validation_data=(testX, testY))
 
         print('-------------------------\n[INFO] Saving Model\n-------------------------')
 
         filename = os.path.join(args.output_dir, 'wavelet_model.{0}'.format(channel))
 
         model.save(filename)
+
+        """
+            Save information about model to the README file
+        """
+        output_str = ''
+
+        output_str += '## Channel {0} Model\n\n'.format(channel)
+
+        output_str += '| Epoch | Accuracy | Loss | Validation Accuracy | Validation Loss |\n'
+        output_str += '| ---- | ------ | ------ | ------- | ------- |\n'
+        i = 0
+        while i < len(history.history['accuracy']):
+            epoch = i + 1
+            accuracy = history.history['accuracy'][i]
+            loss = history.history['loss'][i]
+            val_accuracy = history.history['val_accuracy'][i]
+            val_loss = history.history['val_loss'][i]
+
+            output_str += '| {0} | {1} | {2} | {3} | {4} |\n'.format(epoch, accuracy, loss, val_accuracy, val_loss)
+            i += 1
+
+        output_str += '\n\n'
+
+        command = 'echo \'{0}\' >> {1}'.format(output_str, output_file)
+        check_call(command, shell=True)
+
 
 if __name__ == '__main__':
     main()
