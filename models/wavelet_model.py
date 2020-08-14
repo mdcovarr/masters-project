@@ -35,21 +35,10 @@ def handle_arguments():
     Function used to parse script arguments
     :return args: commandline arguments for script
     """
-    """
-    parser.add_argument("-d", "--dataset", required=True,
-            help="path to input dataset of images")
-    parser.add_argument("-m", "--model", required=True,
-            help="path to output trained model")
-    parser.add_argument("-l", "--label-bin", required=True,
-            help="path to output label binarizer")
-    parser.add_argument("-p", "--plot", required=True,
-            help="path to output accuracy/loss plot")
-    """
     channel_choices = [
         'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
         'Pz', 'PO3', 'O1', 'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8',
-        'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2', 'Fz', 'Cz', 'EXG1', 'EXG2', 'EXG3',
-        'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8'
+        'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2', 'Fz', 'Cz'
     ]
 
     parser = argparse.ArgumentParser(description='Train a model to classify spectrograms')
@@ -165,7 +154,7 @@ def main():
     print('-------------------------\n[INFO] Building Model\n-------------------------')
 
     # split training and test data
-    (trainX, testX, trainY, testY) = train_test_split(data_set, labels, test_size=0.25, random_state=42)
+    (trainX, testX, trainY, testY) = train_test_split(data_set, labels, test_size=0.20, random_state=42)
 
     lb = LabelBinarizer()
     trainY = lb.fit_transform(trainY)
