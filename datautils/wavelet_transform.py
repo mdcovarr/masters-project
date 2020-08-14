@@ -48,7 +48,7 @@ class WaveletTransform(object):
                 raw.filter(0.5, 32.0, fir_design='firwin')
 
                 # Create output dir to patient data
-                filename_dir = eeg_filename.split(os.path.sep)[-4:-2]
+                filename_dir = eeg_file.split(os.path.sep)[-4:-3]
                 patient_path = os.path.join(class_root, '/'.join(filename_dir))
                 self.data_helper.clean_create_dir(patient_path)
 
@@ -81,10 +81,7 @@ class WaveletTransform(object):
 
             channel_path = os.path.join(kwargs['output_dir'], channel)
 
-            if os.path.isdir(channel_path):
-                shutil.rmtree(channel_path, ignore_errors=True)
-
-            os.makedirs(channel_path)
+            self.data_helper.clean_create_dir(channel_path)
 
             # counter for image names
             image_counter = 0
@@ -113,7 +110,6 @@ class WaveletTransform(object):
                     output_file = os.path.join(channel_path, str(image_counter))
 
                     plt.pcolormesh(abs(coef), vmax=vmax, vmin=vmin)
-                    plt.show()
 
                     """
                         Modifying Plot settings
