@@ -57,6 +57,8 @@ def handle_arguments():
                         help='Flag used to determine the number of epochs for training')
     parser.add_argument('-o', '--output-dir', dest='output_dir', required=True,
                         help='directory where to output all models created for each channel')
+    parser.add_argument('-d', '--data-root', dest='data_root', required=True,
+                        help='root of directory for training testing data images')
     args = parser.parse_args()
 
     return args
@@ -122,6 +124,15 @@ def main():
     # handle arguments
     args = handle_arguments()
 
+    """
+        First determine the root directory of training/testing data for models
+    """
+    DATA_ROOT = args.data_root
+    PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-off')
+    PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-on')
+    NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'NONPD', '**')
+    PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
+
     print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
 
     """
@@ -175,7 +186,7 @@ def main():
 
         model.add(Flatten())
 
-        model.add(Dense(256, activation=ACTIVATION))
+        model.add(Dense(500, activation=ACTIVATION))
 
         model.add(Dense(2, activation=PREDICT_ACTIVATION))
         model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
@@ -186,7 +197,7 @@ def main():
 
         print('-------------------------\n[INFO] Saving Model\n-------------------------')
 
-        filename = os.path.join(args.output_dir, 'wavelet_model.{0}'.format(channel))
+        filename = os.path.join(args.output_dir, 'model.{0}'.format(channel))
 
         model.save(filename)
 
