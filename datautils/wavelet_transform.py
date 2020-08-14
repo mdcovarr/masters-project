@@ -66,8 +66,7 @@ class WaveletTransform(object):
                 1. Need to lead in the data
             """
             raw = mne.io.read_raw_bdf(filename, preload=True, stim_channel='auto', verbose=False)
-            raw.notch_filter(np.arange(60, 241, 60))
-            raw.filter(1.0, 60.0, fir_design='firwin')
+            raw.filter(0.5, 32.0, fir_design='firwin')
 
             """
                 2. Create output dir for patient data
@@ -105,8 +104,7 @@ class WaveletTransform(object):
                     1. Need to load in the data
                 """
                 raw = mne.io.read_raw_bdf(filename, preload=True, stim_channel='auto', verbose=False)
-                raw.notch_filter(np.arange(60, 241, 60))
-                raw.filter(1.0, 60.0, fir_design='firwin')
+                raw.filter(0.5, 32.0, fir_design='firwin')
 
                 """
                     2. Create output dir for patient data
@@ -174,15 +172,16 @@ class WaveletTransform(object):
                 # cmor0.4-1.0
                 coef, freq = pywt.cwt(np.array(current_segment), scales, 'cmor0.4-1.0')
 
-                vmin = abs(coef).min()
-                vmax = abs(coef).max()
+                vmin = 0.0
+                vmax = 30.0
 
                 coef = np.flip(coef, axis=0)
 
                 try:
                     output_file = os.path.join(channel_path, str(image_counter))
 
-                    plt.pcolormesh(abs(coef), cmap='jet', vmax=vmax, vmin=vmin)
+                    plt.pcolormesh(abs(coef), vmax=vmax, vmin=vmin)
+                    plt.show()
 
                     """
                         Modifying Plot settings
@@ -258,44 +257,3 @@ class WaveletTransform(object):
             # Now we need to output to file with data
             output_file = os.path.join(channel_path, 'data.csv')
             df.to_csv(output_file)
-
-    def apply_emd(self):
-        """
-        Function used to apply EMD to data in order to remove baseline wanderer if needed
-        """
-        pass
-
-        """
-        # EMD Preprocessing
-        emd = EMD(max_imfs=2)
-        t = np.linspace(0, 2, 1024)
-        IMF = emd.emd(current_segment, t)
-        N = IMF.shape[0] + 1
-
-            # For testing purposes of data
-
-        # Plot current channel information
-        plt.subplot(N,1,1)
-        plt.plot(t, current_segment, 'r')
-
-        for n, imf in enumerate(IMF):
-            plt.subplot(N,1,n+2)
-            plt.plot(t, imf, 'g')
-            plt.title("IMF "+str(n+1))
-            plt.xlabel("Time [s]")
-
-        plt.tight_layout()
-        plt.savefig('simple_example')
-        plt.show()
-
-        sig = 0
-        for n, imf in enumerate(IMF):
-            if n == 4:
-                break
-            else:
-                sig += imf
-
-        plt.plot(t, sig)
-        plt.show()
-        """
-
