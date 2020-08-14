@@ -65,10 +65,3 @@ class DataLoader(object):
             raw_data.ch_names
         """
         return raw
-
-if __name__ == '__main__':
-    paths = ['../data/**/ses-hc/eeg/*.bdf', '../data/**/ses-off/eeg/*.bdf', '../data/**/ses-on/eeg/*.bdf']
-    dl = DataLoader(paths=paths)
-    dl.load_data_files(paths)
-
-    print(dl.all_files)
