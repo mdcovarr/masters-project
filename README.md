@@ -16,26 +16,41 @@ python >= 3.7
 ./
 ├── LICENSE
 ├── README.md
-└── __main__.py
+├── __main__.py
+├── datautils
+│   ├── data_loader.py
+│   ├── stft.py
+│   └── wavelet_transform.py
+└── models
+    ├── cnn_model.py
+    ├── ensemble.py
+    └── stft_model.py
+
+2 directories, 9 files
 ```
 
 ## Software Help
 run command `python __main__.py -h`
+
+Main Script is used to generate spectrogram images, or scalogram images depending on parameters passed to script.
+It uses the directory **./data** as to root directory for the EEG readings. Directory is not pushed to repository,
+but data can be downloaded from the link above on **UC San Diego Dataset**
 ```
-usage: __main__.py [-h] [-c {PD,NONPD,ALL}]
+usage: __main__.py [-h] -c {PD_OFF,PD_ON,NONPD,ALL} [-s] [-w] -o OUTPUT_DIR
 
 Split EEG data preprocess and create spectrograms
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c {PD,NONPD,ALL}, --class {PD,NONPD,ALL}
+  -c {PD_OFF,PD_ON,NONPD,ALL}, --class {PD_OFF,PD_ON,NONPD,ALL}
                         Flag used to determine what class type we want to cretae spectrogram images for
+  -s, --stft            Flag used to utilize the short-time fourier transform in data processing
+  -w, --wave            Flag used to utilize wavelet transform in data processing
+  -o OUTPUT_DIR, --output-dir OUTPUT_DIR
+                        Flag used to determine the root output path to place images
 ```
 
-# Methods
-## Method 1
-Attempting to generate spectrogram images for Parkinson's Disease (PD) patients and
-NON PD patients
+## Models
 
 #### Goal
 * To predict/classify EEG Readings that contain biomarker indicators of Parkinson's Disease
