@@ -14,7 +14,6 @@ from scipy.fftpack import fft, ifft
 import pywt
 from PyEMD import EMD
 
-EXCLUDED_CHANNELS = ['Status', 'EXG1', 'EXG2', 'EXG3', 'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8']
 
 class STFT(object):
     """
@@ -27,6 +26,7 @@ class STFT(object):
         self.classes = kwargs['state']
         self.root_path = kwargs['root_path']
         self.data_helper = kwargs['data_helper']
+        self.excluded_channels = kwargs['excluded_channels']
 
     def generate_stft_transform(self):
         """
