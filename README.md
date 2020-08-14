@@ -22,9 +22,9 @@ python >= 3.7
 │   ├── stft.py
 │   └── wavelet_transform.py
 └── models
-    ├── cnn_model.py
     ├── ensemble.py
-    └── stft_model.py
+    ├── stft_model.py
+    └── wavelet_model.py
 
 2 directories, 9 files
 ```
@@ -58,7 +58,7 @@ This model utilizes the scalogram images developed via the wavelet transform.
 
 #### models/stft_model.py
 The **stft_model** script is used to generate a model for a single channel of the EEG recordings.
-The model utilzes the spectrogram images developed via short-time fourier transform.
+The model utilizes the spectrogram images developed via short-time fourier transform.
 
 
 #### models/ensemble.py
