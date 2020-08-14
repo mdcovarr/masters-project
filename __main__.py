@@ -55,14 +55,14 @@ from datautils import wavelet_transform
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 ROOT_PATH = os.path.join(CWD, 'data')
-SPECTROGRAM_ROOT = os.path.join(CWD, 'spectrogram-images')
+SPECTROGRAM_ROOT = os.path.join(CWD, 'spectrogram-images-32Hz')
 WAVELET_ROOT = os.path.join(CWD, 'wavelet-images')
 PATTERN = os.path.join(ROOT_PATH, '**', '*.bdf')
 TEST_FILE = './data/sub-hc1/ses-hc/eeg/sub-hc1_ses-hc_task-rest_eeg.bdf'
 NONPD_PATH = r'.*sub-hc\d{1,2}.*'
 PD_PATH = r'.*sub-pd\d{1,2}.*'
 
-EXCLUDED_CHANNELS = ['Status']
+EXCLUDED_CHANNELS = ['Status', 'EXG1', 'EXG2', 'EXG3', 'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8']
 MY_DPI = 192
 
 INTERVAL = 2560
@@ -77,6 +77,13 @@ CHANNEL_COUNT = 40
 W = 6.
 FREQ = np.linspace(1, FREQUENCY/2, 100)
 WIDTHS = W * FREQUENCY / (2 * FREQ * np.pi)
+
+# TODO: Parameters that can be added
+# Segemnt duration
+# high pass filter
+# low pass filter
+# overlap
+# number of data pts per segment
 
 def handle_arguments():
     """
@@ -163,7 +170,7 @@ def stft_iterate_eeg_data(**kwargs):
     fs = int(raw_data.info["sfreq"])
 
     # STFT Parameters
-    segment_size = 2048 # 4 seconds
+    segment_size = 1024 # 4 seconds
     amp = 1 * np.sqrt(2)
 
 
@@ -186,10 +193,11 @@ def stft_iterate_eeg_data(**kwargs):
             upper_point = lower_point + segment_size
             current_segment = channel_data[lower_point : upper_point]
 
-            f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=256, boundary=None)
+            f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=256, boundary=None, noverlap=230)
 
-            Zxx = Zxx[0 : 32]
-            f = f[0 : 32]
+            Zxx = Zxx[0 : 16]
+            f = f[0 : 16]
+            print(max(Zxx))
 
             try:
                 output_filepath = os.path.join(channel_path, str(image_counter))
@@ -231,8 +239,7 @@ def handle_PD_patients(**kwargs):
             data = load_data(filename)
 
             # apply filters
-            data.notch_filter(np.arange(60, 241, 60))
-            data.filter(1.0, 60.0, fir_design='firwin')
+            data.filter(0.5, 32.0, fir_design='firwin')
 
             """
                 2. Create output dir for patient data
@@ -261,8 +268,7 @@ def handle_NONPD_patients(**kwargs):
         data = load_data(filename)
 
         # apply filters
-        data.notch_filter(np.arange(60, 241, 60))
-        data.filter(1.0, 60.0, fir_design='firwin')
+        data.filter(0.5, 32.0, fir_design='firwin')
 
         """
             2. Create output dir for patient data
