@@ -51,10 +51,32 @@ optional arguments:
 ```
 
 ## Models
+#### models/wavelet_model.py
+The **wavelet_model** script is used to generate a model for a single channel of the EEG recordings.
+This model utilizes the scalogram images developed via the wavelet transform.
+
+
+#### models/stft_model.py
+The **stft_model** script is used to generate a model for a single channel of the EEG recordings.
+The model utilzes the spectrogram images developed via short-time fourier transform.
+
+
+#### models/ensemble.py
+The **ensemble** script is used to generate 1 model for each channel/leads of the EEG recording headset.
+For example with a 32 channel headset will result in 32 different models developed. This is in hopes to
+develop an ensemble model that would utilize the models of each channel, to make it's final classification/prediction.
+
 
 #### Goal
 * To predict/classify EEG Readings that contain biomarker indicators of Parkinson's Disease
-as appose to EEG reading that do not contain signs of Parkinson's Disease
+as appose to EEG reading that do not contain signs of Parkinson's Disease. There are currently
+3 different classes we are looking at:
+
+```
+- NON Parkinson's Disease Patients
+- Parkinson's Disease Patients OFF medication
+- Parkinson's Disease patients ON medication
+```
 
 ## Resources
 ```
