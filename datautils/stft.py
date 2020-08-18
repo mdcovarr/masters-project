@@ -75,7 +75,7 @@ class STFT(object):
         amp = 5
 
         for channel in channel_names:
-            if channel in EXCLUDED_CHANNELS:
+            if channel in self.excluded_channels:
                 continue
             # Create channel output directory and iterate through all channels
             channel_path = os.path.join(kwargs["output_dir"], channel)
