@@ -4,6 +4,7 @@ wavelet-images/
 stft-images/
 datasets/
 spectrogram-images/
+archive/
 
 # vscode
 .vscode/

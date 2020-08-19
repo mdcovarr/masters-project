@@ -29,9 +29,9 @@ METRICS = ['accuracy']
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 DATA_ROOT = 'wavelet-images'
-PD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**')
-PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-off')
-PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-on')
+PD_ROOT = os.path.join(CWD, '..', DATA_ROOT, '0', '**')
+PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, '1', '**', 'ses-off')
+PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, '2', '**', 'ses-on')
 NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'NONPD', '**')
 PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
 CLASSES = 2
@@ -174,15 +174,14 @@ def main():
         # building model
         model = Sequential()
 
+        # Maybe pad images to not lose data along the border of the image
+        # maybe have a max pooling with 0 overlap. Meaning stride of (2, 2)
+
         # adding layers
-        model.add(Conv2D(16, 3, input_shape=(int(args.image_size), int(args.image_size), 3), activation=ACTIVATION))
-        model.add(MaxPool2D())
-        model.add(Conv2D(32, 3, activation=ACTIVATION))
-        model.add(MaxPool2D())
-        model.add(Conv2D(64, 3, activation=ACTIVATION))
-        model.add(MaxPool2D())
-        model.add(Conv2D(64, 3, activation=ACTIVATION))
-        model.add(MaxPool2D())
+        model.add(Conv2D(16, (3, 3), input_shape=(int(args.image_size), int(args.image_size), 3), activation=ACTIVATION, padding='same'))
+        model.add(MaxPool2D(stride=(2, 2)))
+        model.add(Conv2D(64, (3, 3), activation=ACTIVATION, padding='same'))
+        model.add(MaxPool2D(stride=(2, 2)))
 
         model.add(Flatten())
 
