@@ -130,7 +130,7 @@ def main():
 
     # Function used for the short time fourier transform
     if args.stft:
-        handle_stft(state=args.classes, root_path=IMAGES_ROOT, data_helper=data_helper, excluded_channels=EXCLUDED_CHANNELS)
+        handle_stft(state=args.classes, root_path=IMAGE_ROOT, data_helper=data_helper, excluded_channels=EXCLUDED_CHANNELS)
 
     if args.wavelet:
         handle_morlet_wavelet_transform(state=args.classes, root_path=IMAGE_ROOT, data_helper=data_helper, excluded_channels=EXCLUDED_CHANNELS)
