@@ -28,12 +28,11 @@ LOSS = 'binary_crossentropy'
 METRICS = ['accuracy']
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-DATA_ROOT = 'wavelet-images'
-PD_ROOT = os.path.join(CWD, '..', DATA_ROOT, '0', '**')
-PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, '1', '**', 'ses-off')
-PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, '2', '**', 'ses-on')
-NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'NONPD', '**')
-PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
+DATA_ROOT = ''
+PD_OFF_ROOT = ''
+PD_ON_ROOT = ''
+NONPD_ROOT = ''
+PATH_TO_DATASET = []
 CLASSES = 2
 README = 'README.md'
 
@@ -128,10 +127,10 @@ def main():
         First determine the root directory of training/testing data for models
     """
     DATA_ROOT = args.data_root
-    PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-off')
-    PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'PD', '**', 'ses-on')
-    NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'NONPD', '**')
-    PATH_TO_DATASET = [PD_OFF_ROOT, NONPD_ROOT]
+    NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, '0', '**')
+    PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, '1', '**')
+    PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, '2', '**')
+    PATH_TO_DATASET = [NONPD_ROOT, PD_OFF_ROOT]
 
     print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
 
@@ -175,17 +174,21 @@ def main():
         model = Sequential()
 
         # Maybe pad images to not lose data along the border of the image
-        # maybe have a max pooling with 0 overlap. Meaning stride of (2, 2)
+        # Maybe have a max pooling with 0 overlap. Meaning stride of (2, 2)
+        # Maybe try Adadelta optimizer function
+        # maybe try mini batching
+
+        # For evaluation I can use cross-validation
 
         # adding layers
         model.add(Conv2D(16, (3, 3), input_shape=(int(args.image_size), int(args.image_size), 3), activation=ACTIVATION, padding='same'))
-        model.add(MaxPool2D(stride=(2, 2)))
+        model.add(MaxPool2D(strides=(2, 2)))
         model.add(Conv2D(64, (3, 3), activation=ACTIVATION, padding='same'))
-        model.add(MaxPool2D(stride=(2, 2)))
+        model.add(MaxPool2D(strides=(2, 2)))
 
         model.add(Flatten())
 
-        model.add(Dense(500, activation=ACTIVATION))
+        model.add(Dense(256, activation=ACTIVATION))
 
         model.add(Dense(2, activation=PREDICT_ACTIVATION))
         model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
