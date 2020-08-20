@@ -76,7 +76,7 @@ class WaveletTransform(object):
         segment_size = 1024 # 2 seconds
 
         for channel in channel_names:
-            if channel in EXCLUDE_CHANNELS:
+            if channel in self.excluded_channels:
                 continue
 
             channel_path = os.path.join(kwargs['output_dir'], channel)
