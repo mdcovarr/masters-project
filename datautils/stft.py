@@ -28,6 +28,14 @@ class STFT(object):
         self.data_helper = kwargs['data_helper']
         self.excluded_channels = kwargs['excluded_channels']
 
+        # TODO: can make the following parameters passed as options
+        #       for wavelet transform
+        self.segment_time_size = 4
+        self.band_filter = [0.4, 40.0]
+        self.vmin_vmax = [0.0, 8.0]
+        self.nperseg = 256
+        self.noverlap = 230
+
     def generate_stft_transform(self):
         """
         Function used to generate the short-time fourier transform
@@ -45,7 +53,7 @@ class STFT(object):
                 raw = self.data_helper.load_data(eeg_file)
 
                 # Apply filter to data
-                raw.filter(0.5, 32.0, fir_design='firwin')
+                raw.filter(self.band_filter[0], self.band_filter[1], fir_design='firwin')
 
                 # Create output dir to patient data
                 filename_dir = eeg_file.split(os.path.sep)[-4:-3]
@@ -71,12 +79,12 @@ class STFT(object):
         fs = int(raw_data.info["sfreq"])
 
         # STFT Parameters
-        segment_size = 1024 # 4 seconds
-        amp = 5
+        segment_size = fs * self.segment_time_size
 
         for channel in channel_names:
             if channel in self.excluded_channels:
                 continue
+
             # Create channel output directory and iterate through all channels
             channel_path = os.path.join(kwargs["output_dir"], channel)
             self.data_helper.clean_create_dir(channel_path)
@@ -93,18 +101,18 @@ class STFT(object):
                 upper_point = lower_point + segment_size
                 current_segment = channel_data[lower_point : upper_point]
 
-                f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=256, boundary=None, noverlap=230)
+                f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=self.nperseg, boundary=None, noverlap=self.noverlap)
 
-                Zxx = Zxx[0 : 17]
-                f = f[0 : 17]
+                Zxx = Zxx[0 : 25]
+                f = f[0 : 25]
 
                 try:
                     output_filepath = os.path.join(channel_path, str(image_counter))
-                    plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp, shading='gouraud')
+                    plt.pcolormesh(t, f, np.abs(Zxx), vmin=self.vmin_vmax[0], vmax=self.vmin_vmax[1], shading='gouraud')
+
                     plt.axis('off')
 
                     figure = plt.gcf()
-                    figure.set_size_inches(1.69, 1.69)
                     plt.savefig(output_filepath, bbox_inches='tight', pad_inches=0, dpi=100)
                     plt.clf()
 
