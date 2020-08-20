@@ -56,10 +56,10 @@ from datautils import data_loader
 from datautils import stft
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-ROOT_PATH = os.path.join(CWD, 'data')
+ROOT_PATH = '' #os.path.join(CWD, 'data')
 IMAGES_ROOT = ''
 
-PATHS = ['data/**/ses-hc/eeg/*.bdf', 'data/**/ses-off/eeg/*.bdf', 'data/**/ses-on/eeg/*.bdf']
+PATHS = [] # ['**/ses-hc/eeg/*.bdf', '**/ses-off/eeg/*.bdf', '**/ses-on/eeg/*.bdf']
 EXCLUDED_CHANNELS = ['Status', 'EXG1', 'EXG2', 'EXG3', 'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8']
 
 # TODO: Parameters that can be added
@@ -82,6 +82,8 @@ def handle_arguments():
             help='Flag used to utilize the short-time fourier transform in data processing')
     parser.add_argument('-w', '--wave', dest='wavelet', action='store_true', default=False,
             help='Flag used to utilize wavelet transform in data processing')
+    parser.add_argument('-i', '--input-dir', dest='input_dir', required=True,
+            help='Flag used to determine the root input directory of the data')
     parser.add_argument('-o', '--output-dir', dest='output_dir', required=True,
             help='Flag used to determine the root output path to place images')
 
@@ -115,6 +117,10 @@ def main():
         Determine root output path for images
     """
     IMAGE_ROOT = os.path.join(CWD, args.output_dir)
+    paths = ['**/ses-hc/eeg/*.bdf', '**/ses-off/eeg/*.bdf', '**/ses-on/eeg/*.bdf']
+
+    for path in paths:
+        PATHS.append(os.path.join(CWD, args.input_dir, path))
 
     """
         Get Data Helper to load files
