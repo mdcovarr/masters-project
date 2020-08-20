@@ -31,9 +31,9 @@ class WaveletTransform(object):
         # TODO: can make the following parameters passed as options
         #       for wavelet transform
         self.segment_time_size = 2
-        self.scales = [2, 4, 8, 16, 32, 64, 128, 256, 512]#np.arange(1, 128)
-        self.band_filter = [0.5, 32.0]
-        self.vmin_vmax = [0.0, 50.0]
+        self.scales = np.arange(1, 64)
+        self.band_filter = [0.5, 40.0]
+        self.vmin_vmax = [0.0, 4.0]
 
     def generate_wavelet_transform(self):
         """
@@ -52,7 +52,7 @@ class WaveletTransform(object):
                 raw = self.data_helper.load_data(eeg_file)
 
                 # Apply filter to data
-                raw.filter(0.5, 32.0, fir_design='firwin')
+                raw.filter(self.band_filter[0], self.band_filter[1], fir_design='firwin')
 
                 # Create output dir to patient data
                 filename_dir = eeg_file.split(os.path.sep)[-4:-3]
@@ -113,7 +113,9 @@ class WaveletTransform(object):
                 try:
                     output_file = os.path.join(channel_path, str(image_counter))
 
-                    plt.pcolormesh(abs(coef), vmin=self.vmin_vmax[0], vmax=self.vmin_vmax[1])
+                    coef = np.log(abs(coef))
+
+                    plt.pcolormesh(coef, vmin=self.vmin_vmax[0], vmax=self.vmin_vmax[1])
                     plt.show()
 
                     """
