@@ -28,6 +28,13 @@ class WaveletTransform(object):
         self.data_helper = kwargs['data_helper']
         self.excluded_channels = kwargs['excluded_channels']
 
+        # TODO: can make the following parameters passed as options
+        #       for wavelet transform
+        self.segment_time_size = 2
+        self.scales = [2, 4, 8, 16, 32, 64, 128, 256, 512]#np.arange(1, 128)
+        self.band_filter = [0.5, 32.0]
+        self.vmin_vmax = [0.0, 50.0]
+
     def generate_wavelet_transform(self):
         """
         Function used to genereate the wavelet transform images from data
@@ -73,19 +80,21 @@ class WaveletTransform(object):
         status_data = data['Status'].values
 
         # Wavelet Transform Parameters
-        segment_size = 1024 # 2 seconds
+        segment_size = fs * self.segment_time_size
 
         for channel in channel_names:
             if channel in self.excluded_channels:
                 continue
 
+            # Create output directory for channel image data
             channel_path = os.path.join(kwargs['output_dir'], channel)
-
             self.data_helper.clean_create_dir(channel_path)
 
             # counter for image names
             image_counter = 0
 
+            # determine number of segments we are going to look at
+            # to create the wavelet transformation for
             channel_data = data[channel].values
             size = len(channel_data)
             segments = int(size // segment_size)
@@ -96,20 +105,16 @@ class WaveletTransform(object):
                 upper_point = lower_point + segment_size
                 current_segment = channel_data[lower_point : upper_point]
 
-                scales = np.arange(1, 32)
-
                 # cmor0.4-1.0
-                coef, freq = pywt.cwt(np.array(current_segment), scales, 'cmor0.4-1.0')
-
-                vmin = 0.0
-                vmax = 30.0
-
-                coef = np.flip(coef, axis=0)
+                coef, freq = pywt.cwt(np.array(current_segment), self.scales, 'cmor0.4-1.0')
+                # flip image information along the x-axis
+                #coef = np.flip(coef, axis=0)
 
                 try:
                     output_file = os.path.join(channel_path, str(image_counter))
 
-                    plt.pcolormesh(abs(coef), vmax=vmax, vmin=vmin)
+                    plt.pcolormesh(abs(coef), vmin=self.vmin_vmax[0], vmax=self.vmin_vmax[1])
+                    plt.show()
 
                     """
                         Modifying Plot settings
