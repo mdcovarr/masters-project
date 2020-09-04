@@ -31,7 +31,7 @@ class STFT(object):
         # TODO: can make the following parameters passed as options
         #       for wavelet transform
         self.segment_time_size = 4
-        self.band_filter = [0.4, 40.0]
+        self.band_filter = [0.5, 40.0]
         self.vmin_vmax = [0.0, 8.0]
         self.nperseg = 256
         self.noverlap = 230
