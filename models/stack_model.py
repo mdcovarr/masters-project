@@ -56,8 +56,8 @@ def load_data(data_dir):
     nonpd_dirs.sort()
     pd_dirs.sort()
 
-    nonpd_dirs = nonpd_dirs[:1]
-    pd_dirs = pd_dirs[:1]
+    nonpd_dirs = nonpd_dirs[:3]
+    pd_dirs = pd_dirs[:3]
 
     data_dirs = []
     data_dirs.extend(nonpd_dirs)
@@ -122,6 +122,56 @@ def stacked_dataset(members, X):
     stack_x = np.array(stack_x)
     return stack_x
 
+def reverse_one_hot(data):
+    labels = []
+
+    for i in range(data.shape[0]):
+        point = data[i, :]
+
+        if point[0] > 0:
+            labels.append(0)
+        else:
+            labels.append(1)
+
+    return np.array(labels)
+
+def stacked_prediction(stack_x, y):
+    """
+    Function uses the output of the single models to determine it's final guess
+    using majority rule in final output
+    """
+    y_hat = []
+
+    # stack_x = (32xDATA_POINTSx2)
+    for i in range(stack_x.shape[1]):
+        # need to determine what is the majority rule for each image
+        data = stack_x[:, i, :]
+
+        curr_labels = reverse_one_hot(data)
+
+        if np.sum(curr_labels) > 16.0:
+            y_hat.append(1)
+        else:
+            y_hat.append(0)
+
+    return np.array(y_hat)
+
+def get_accuracy(y_hat, y):
+    """
+    Function used to get the accuracy of the ensemble model
+    """
+    correct = 0
+
+    if len(y_hat) != len(y):
+        return 0
+
+    for i in range(len(y_hat)):
+        if y_hat[i] == y[i]:
+            correct += 1
+
+    acc = (1.0 * correct) / len(y_hat)
+    return acc
+
 def main():
     """
     Script start
@@ -137,7 +187,11 @@ def main():
     print('----------------- Getting individual model outputs... -------------------')
     stack_x = stacked_dataset(members, X)
 
-    # TODO: need to determine what needs to be done with the output of all the models
+    y_hat = stacked_prediction(stack_x, y)
+
+    acc = get_accuracy(y_hat, y)
+
+    print('current accuracy: {0} %'.format(acc * 100))
 
 if __name__ == '__main__':
     main()
