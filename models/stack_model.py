@@ -99,9 +99,13 @@ def stacked_dataset(members, X):
     Function used to get prediction of data for each model
     and stack results as input for the stacked model
     :param members: list of models, one for each channel of EEG reading
+    :param X: list of concatenated images for each channel. 1 data point is a concatenated image
+    :return stack_x: output predictions from each of the indvidual channel model, used as input for stacked model
     """
     # there are 32 models
     # images are (200x200x3)
+    stack_x = []
+
     for i, member in enumerate(members):
         all_data = []
 
@@ -114,6 +118,10 @@ def stacked_dataset(members, X):
 
         all_data = np.array(all_data)
         y_hat = member.predict(all_data)
+        stack_x.append(y_hat)
+
+    stack_x = np.array(stack_x)
+    return stack_x
 
 def main():
     """
