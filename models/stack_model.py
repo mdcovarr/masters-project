@@ -91,7 +91,6 @@ def load_data(data_dir):
             else:
                 y = np.vstack((y, image_label))
 
-    # dimensions are = (180, 524288, 3) where 180 is the number of data points
     return X, y
 
 def stacked_dataset(members, X):
@@ -135,7 +134,10 @@ def main():
     X, y = load_data(DATA_ROOT)
     print('----------------- All data loaded... -------------------')
 
-    stacked_dataset(members, X)
+    print('----------------- Getting individual model outputs... -------------------')
+    stack_x = stacked_dataset(members, X)
+
+    # TODO: need to determine what needs to be done with the output of all the models
 
 if __name__ == '__main__':
     main()
