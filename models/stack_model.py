@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-DATA_ROOT = os.path.join(CWD, '..', 'stft-ensemble-images-40Hz')
+DATA_ROOT = os.path.join(CWD, '..', 'stft-ensemble-200-40Hz')
 SUFFIX_CHANNELS = [
     'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
     'Pz', 'PO3', 'O1', 'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8',
@@ -101,22 +101,19 @@ def stacked_dataset(members, X):
     :param members: list of models, one for each channel of EEG reading
     """
     # there are 32 models
-    # images are (128x128x3)
+    # images are (200x200x3)
     for i, member in enumerate(members):
+        all_data = []
 
         for j in range(X.shape[0]):
-            lower_point = i * 16384
-            upper_point = lower_point + 16384
+            lower_point = i * 40000
+            upper_point = lower_point + 40000
             data_point = X[j, lower_point : upper_point, :]
-            data_point = data_point.reshape((128, 128, 3))
+            data_point = data_point.reshape((200, 200, 3))
+            all_data.append(data_point)
 
-            y_hat = member.predict(data_point, verbose=0)
-            print('success')
-            # img = Image.fromarray(data_point, 'RGB')
-            # img.save('my.png')
-            # img.show()
-
-    pass
+        all_data = np.array(all_data)
+        y_hat = member.predict(all_data)
 
 def main():
     """
