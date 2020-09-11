@@ -35,6 +35,8 @@ NONPD_ROOT = ''
 PATH_TO_DATASET = []
 CLASSES = 2
 README = 'README.md'
+ACCURACY_FILE = 'accuracy.png'
+LOSS_FILE = 'loss.png'
 
 CHANNEL_CHOICES = [
     'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
@@ -149,6 +151,17 @@ def main():
     command = 'touch {0}'.format(output_file)
     check_call(command, shell=True)
 
+    """
+        Determine Plot parameters for 32 channels
+    """
+    rows = 8
+    cols = 4
+    plots = rows * cols
+    figure, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(60, 50))
+    figure_loss, axes_loss = plt.subplots(nrows=rows, ncols=cols, figsize=(60, 50))
+    r = 0
+    c = 0
+
     # TODO: can add metadata to the README file about parameters chosen for models
 
     """
@@ -203,9 +216,7 @@ def main():
 
         model.save(filename)
 
-        """
-            Save information about model to the README file
-        """
+        print('-------------------------\n[INFO] Save model information to README.md\n-------------------------')
         output_str = ''
 
         output_str += '## Channel {0} Model\n\n'.format(channel)
@@ -227,6 +238,37 @@ def main():
 
         command = 'echo \'{0}\' >> {1}'.format(output_str, output_file)
         check_call(command, shell=True)
+
+        print('-------------------------\n[INFO] Ploting Accuracy of Model\n-------------------------')
+        axes[r, c].plot(history.history['accuracy'], linewidth=2.0)
+        axes[r, c].plot(history.history['val_accuracy'], linewidth=2.0)
+        axes[r, c].set_title(channel)
+
+        print('-------------------------\n[INFO] Ploting Loss of Model\n-------------------------')
+        axes_loss[r, c].plot(history.history['loss'], linewidth=2.0)
+        axes_loss[r, c].plot(history.history['val_loss'], linewidth=2.0)
+        axes_loss[r, c].set_title(channel)
+
+        c += 1
+        if c == 4:
+            break
+            c = 0
+            r += 1
+
+
+    accuracy_file = os.path.join(CWD, args.output_dir, ACCURACY_FILE)
+    loss_file = os.path.join(CWD, args.output_dir, LOSS_FILE)
+    for ax in axes.flat:
+        ax.set(xlabel='Epoch', ylabel='Accuracy')
+
+    for ax in axes_loss.flat:
+        ax.set(xlabel='Epoch', ylabel='Loss')
+
+    figure.tight_layout()
+    figure_loss.tight_layout()
+    figure.savefig(accuracy_file)
+    figure_loss.savefig(loss_file)
+
 
 
 if __name__ == '__main__':
