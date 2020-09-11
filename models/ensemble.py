@@ -215,7 +215,7 @@ def main():
         # Maybe pad images to not lose data along the border of the image
         # Maybe have a max pooling with 0 overlap. Meaning stride of (2, 2)
         # Maybe try Adadelta optimizer function
-        # maybe try mini batching
+        # Maybe try mini batching
 
         # For evaluation I can use cross-validation
 
@@ -299,7 +299,6 @@ def main():
     figure_loss.tight_layout()
     figure.savefig(accuracy_file)
     figure_loss.savefig(loss_file)
-
 
 
 if __name__ == '__main__':
