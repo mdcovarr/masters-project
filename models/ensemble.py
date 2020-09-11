@@ -117,6 +117,31 @@ def get_train_test_data(all_data_paths, image_size):
 
     return data, labels
 
+def print_model_metadata(readme_file, model, args):
+    """
+    Function used to print metadata about models to README.md file
+    :param readme_file: readme file to print model information
+    :param model: current model being trained
+    :param args: command line arguments
+    """
+    output_str = '# Models Metadata\n```\n'
+
+    stringlist = []
+    model.summary(print_fn=lambda x: stringlist.append(x))
+    short_model_summary = "\n".join(stringlist)
+    output_str += short_model_summary
+    output_str += '\n'
+
+    output_str +=  'Epochs: {0}\nImage Size: {1}\n```\n'.format(args.epochs, args.image_size)
+
+    command = 'echo \'{0}\' >> {1}'.format(output_str, readme_file)
+
+    try:
+        check_call(command, shell=True)
+    except:
+        print('Error writing metadata to README file\nexiting...')
+        exit(1)
+
 def main():
     """
     Main Enterance of model
@@ -133,6 +158,7 @@ def main():
     PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, '1', '**')
     PD_ON_ROOT = os.path.join(CWD, '..', DATA_ROOT, '2', '**')
     PATH_TO_DATASET = [NONPD_ROOT, PD_OFF_ROOT]
+    print_metadata = True
 
     print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
 
@@ -205,6 +231,11 @@ def main():
 
         model.add(Dense(2, activation=PREDICT_ACTIVATION))
         model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
+
+        if print_metadata:
+            print('-------------------------\n[INFO] Print Model Metadata\n-------------------------')
+            print_model_metadata(output_file, model, args)
+            print_metadata = False
 
         print('-------------------------\n[INFO] Train Model\n-------------------------')
 
