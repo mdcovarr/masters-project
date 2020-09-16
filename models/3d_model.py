@@ -107,7 +107,7 @@ def get_train_test_data(all_data_paths, image_size):
             image_files = glob.glob(os.path.join(data_path, '*'))
 
             for image_file in image_files:
-                image_src = np.array(Image.open(image_file).resize((image_size, image_size)).convert('RGB'))
+                image_src = np.array(Image.open(image_file).convert('RGB'))
 
                 data.append(image_src)
                 labels.append(int(key))
@@ -164,6 +164,9 @@ def main():
 
     # split training and test data
     (trainX, testX, trainY, testY) = train_test_split(data_set, labels, test_size=0.20, random_state=42)
+
+    # trainX shape if spectrogram images = 200x200
+    # (X, 6400, 200, 3) where X is number of data entries
 
     # building model
     model = Sequential()
