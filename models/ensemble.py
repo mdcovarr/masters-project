@@ -22,7 +22,7 @@ import os
 
 
 ACTIVATION = 'relu'
-PREDICT_ACTIVATION = 'sigmoid'
+PREDICT_ACTIVATION = 'softmax'
 OPTIMIZER = 'adam'
 LOSS = 'binary_crossentropy'
 METRICS = ['accuracy']
@@ -201,8 +201,9 @@ def main():
 
         # Normalize dataset
         data_set = data_set / 255.0
-        # One-Hot encode labels
-        labels = to_categorical(labels, CLASSES)
+
+        # One-Hot encode labels if more than 2 classes.
+        # labels = to_categorical(labels, CLASSES)
 
         print('-------------------------\n[INFO] Building Model\n-------------------------')
 
