@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-DATA_ROOT = os.path.join(CWD, '..', 'stft-ensemble-200-40Hz')
+DATA_ROOT = os.path.join(CWD, '..', 'test-stft-ensemble-200-40Hz')
 SUFFIX_CHANNELS = [
     'Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3',
     'Pz', 'PO3', 'O1', 'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8',
@@ -26,7 +26,7 @@ def load_all_models(model_channels):
 
     for channel in model_channels:
         model_name = 'model.{0}'.format(channel)
-        filename = os.path.join(CWD, '..', 'archive', 'models', 'stft_40Hz', model_name)
+        filename = os.path.join(CWD, '..', 'archive', 'models', 'stft-200-softmax-40Hz', model_name)
         model = load_model(filename)
         all_models.append(model)
 
@@ -55,9 +55,6 @@ def load_data(data_dir):
     # sort and shorten both lists
     nonpd_dirs.sort()
     pd_dirs.sort()
-
-    nonpd_dirs = nonpd_dirs[:3]
-    pd_dirs = pd_dirs[:3]
 
     data_dirs = []
     data_dirs.extend(nonpd_dirs)
