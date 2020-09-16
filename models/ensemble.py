@@ -283,7 +283,6 @@ def main():
 
         c += 1
         if c == 4:
-            break
             c = 0
             r += 1
 
