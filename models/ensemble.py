@@ -24,7 +24,7 @@ import os
 ACTIVATION = 'relu'
 PREDICT_ACTIVATION = 'softmax'
 OPTIMIZER = 'adam'
-LOSS = 'binary_crossentropy'
+LOSS = 'categorical_crossentropy'
 METRICS = ['accuracy']
 
 CWD = os.path.dirname(os.path.realpath(__file__))
@@ -203,7 +203,7 @@ def main():
         data_set = data_set / 255.0
 
         # One-Hot encode labels if more than 2 classes.
-        # labels = to_categorical(labels, CLASSES)
+        labels = to_categorical(labels, CLASSES)
 
         print('-------------------------\n[INFO] Building Model\n-------------------------')
 
