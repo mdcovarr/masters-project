@@ -52,7 +52,6 @@ def handle_arguments():
     """
 
     parser = argparse.ArgumentParser(description='Train a model to classify spectrograms')
-    parser.add_argument('-i', '--image-size', dest='image_size', required=True)
     parser.add_argument('-s', '--set', dest='size', required=True,
                         help='Flag used to determine the amount of experiments to import for train/test data')
     parser.add_argument('-e', '--epochs', dest='epochs', required=True,
