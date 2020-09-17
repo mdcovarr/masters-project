@@ -86,11 +86,10 @@ def determine_data_paths(paths_to_datasets, size):
 
     return all_paths
 
-def get_train_test_data(all_data_paths, image_size):
+def get_train_test_data(all_data_paths):
     """
     Function used to get all train and test images and label data
     :param all_data_paths: dictionary of paths for data
-    :param image_size: size to reshape input image to
     :return data, labels: data with their labels (e.g., NONPD, PD on medication, PD off medication)
     """
     data = []
@@ -114,7 +113,6 @@ def get_train_test_data(all_data_paths, image_size):
 
             if count == 1:
                 break
-
 
     data = np.array(data)
     labels = np.array(labels)
@@ -151,7 +149,7 @@ def main():
 
     all_data_paths = determine_data_paths(PATH_TO_DATASET, int(args.size))
 
-    data_set, labels = get_train_test_data(all_data_paths, int(args.image_size))
+    data_set, labels = get_train_test_data(all_data_paths)
 
     # Normalize dataset
     data_set = data_set / 255.0
@@ -162,13 +160,29 @@ def main():
     print('-------------------------\n[INFO] Building Model\n-------------------------')
 
     # split training and test data
-    (trainX, testX, trainY, testY) = train_test_split(data_set, labels, test_size=0.20, random_state=42)
+    (train_x, test_x, train_y, test_y) = train_test_split(data_set, labels, test_size=0.20, random_state=42)
 
     # trainX shape if spectrogram images = 200x200
     # (X, 6400, 200, 3) where X is number of data entries
 
+    train_x = train_x.reshape((train_x.shape[0], 32, 200, 200, 3))
+    test_x = test_x.reshape((test_x.shape[0], 32, 200, 200, 3))
+
+
     # building model
     model = Sequential()
+
+    model.add(Conv3D(16, kernel_size=(3, 3, 3), input_shape=(32, 200, 200, 3), activation=ACTIVATION, padding='same'))
+    model.add(MaxPool3D())
+    model.add(Conv3D(32, kernel_size=(3, 3, 3), activation=ACTIVATION, padding='same'))
+    model.add(MaxPool3D())
+
+    model.add(Flatten())
+    model.add(Dense(256, activation=ACTIVATION))
+    model.add(Dense(2, activation=PREDICT_ACTIVATION))
+    model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
+
+    history = model.fit(train_x, train_y, epochs=int(args.epochs), validation_data=(test_x, test_y))
 
 
 if '__main__' == __name__:
