@@ -98,8 +98,6 @@ def get_train_test_data(all_data_paths):
     for key in all_data_paths.keys():
         data_paths = all_data_paths[key]
 
-        # count for debugging
-        count = 0
         # need to iterate through all paths of current class and import data
         for data_path in data_paths:
             image_files = glob.glob(os.path.join(data_path, '*'))
@@ -109,15 +107,37 @@ def get_train_test_data(all_data_paths):
 
                 data.append(image_src)
                 labels.append(int(key))
-            count += 1
-
-            if count == 1:
-                break
+            break
 
     data = np.array(data)
     labels = np.array(labels)
 
     return data, labels
+
+def print_model_metadata(readme_file, model, args):
+    """
+    Function used to print metadata about models to README.md file
+    :param readme_file: readme file to print model information
+    :param model: current model being trained
+    :param args: command line arguments
+    """
+    output_str = '# Models Metadata\n```\n'
+
+    stringlist = []
+    model.summary(print_fn=lambda x: stringlist.append(x))
+    short_model_summary = "\n".join(stringlist)
+    output_str += short_model_summary
+    output_str += '\n'
+
+    output_str +=  'Epochs: {0}\n```\n'.format(args.epochs)
+
+    command = 'echo \'{0}\' >> {1}'.format(output_str, readme_file)
+
+    try:
+        check_call(command, shell=True)
+    except:
+        print('Error writing metadata to README file\nexiting...')
+        exit(1)
 
 def main():
     """
@@ -130,6 +150,7 @@ def main():
     NONPD_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'sub-hc*')
     PD_OFF_ROOT = os.path.join(CWD, '..', DATA_ROOT, 'sub-pd*')
     PATH_TO_DATASET = [NONPD_ROOT, PD_OFF_ROOT]
+    print_metadata = True
 
     print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
     """
@@ -182,8 +203,43 @@ def main():
     model.add(Dense(2, activation=PREDICT_ACTIVATION))
     model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
 
+    if print_metadata:
+        print('-------------------------\n[INFO] Print Model Metadata\n-------------------------')
+        print_model_metadata(output_file, model, args)
+        print_metadata = False
+
+    print('-------------------------\n[INFO] Train Model\n-------------------------')
+
     history = model.fit(train_x, train_y, epochs=int(args.epochs), validation_data=(test_x, test_y))
 
+    print('-------------------------\n[INFO] Saving Model\n-------------------------')
+
+    filename = os.path.join(args.output_dir, 'model')
+
+    model.save(filename)
+
+    print('-------------------------\n[INFO] Save model information to README.md\n-------------------------')
+    output_str = ''
+
+    output_str += '## Model\n\n'
+
+    output_str += '| Epoch | Accuracy | Loss | Validation Accuracy | Validation Loss |\n'
+    output_str += '| ---- | ------ | ------ | ------- | ------- |\n'
+    i = 0
+    while i < len(history.history['accuracy']):
+        epoch = i + 1
+        accuracy = history.history['accuracy'][i]
+        loss = history.history['loss'][i]
+        val_accuracy = history.history['val_accuracy'][i]
+        val_loss = history.history['val_loss'][i]
+
+        output_str += '| {0} | {1} | {2} | {3} | {4} |\n'.format(epoch, accuracy, loss, val_accuracy, val_loss)
+        i += 1
+
+    output_str += '\n\n'
+
+    command = 'echo \'{0}\' >> {1}'.format(output_str, output_file)
+    check_call(command, shell=True)
 
 if '__main__' == __name__:
     main()
