@@ -6,6 +6,14 @@ datasets/
 spectrogram-images/
 archive/
 
+# ignore images used for training/testing
+stft-images-40Hz/
+
+stft-ensemble-200-40Hz/
+test-stft-ensemble-200-40Hz/
+
+
+
 # vscode
 .vscode/
 
