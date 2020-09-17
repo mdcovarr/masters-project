@@ -192,10 +192,6 @@ def main():
     # trainX shape if spectrogram images = 200x200
     # (X, 6400, 200, 3) where X is number of data entries
 
-    # TODO: NEED TO WORRY ABOUT THE RESHAPING
-    #train_x = train_x.reshape((train_x.shape[0], 32, 200, 200, 3))
-    #test_x = test_x.reshape((test_x.shape[0], 32, 200, 200, 3))
-
     print('-------------------------\n[INFO] Building Model\n-------------------------')
 
     # building model
@@ -218,7 +214,13 @@ def main():
 
     print('-------------------------\n[INFO] Train Model\n-------------------------')
 
-    history = model.fit(train_x, train_y, epochs=int(args.epochs), validation_data=(test_x, test_y))
+    # history = model.fit(train_x, train_y, epochs=int(args.epochs), validation_data=(test_x, test_y))
+    history = model.fit_generator(generator=my_training_generator,
+                   steps_per_epoch = int(1116 // BATCH_SIZE),
+                   epochs = 10,
+                   verbose = 1,
+                   validation_data = my_validation_generator,
+                   validation_steps = int(279 // BATCH_SIZE))
 
     print('-------------------------\n[INFO] Saving Model\n-------------------------')
 
