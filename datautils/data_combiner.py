@@ -16,8 +16,8 @@ class DataCombiner(object):
         """
             Default Constroctor
         """
-        self.dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'all_images')
-        self.src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test-stft-ensemble-200-40Hz')
+        self.dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'all_ensemble_images')
+        self.src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'stft-ensemble-200-40Hz')
 
     def run(self):
         """
