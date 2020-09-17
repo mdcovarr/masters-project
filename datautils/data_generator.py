@@ -3,6 +3,7 @@
 """
 from tensorflow.keras.utils import Sequence
 import numpy as np
+from skimage.io import imread
 
 class DataGenerator(Sequence):
     """
@@ -29,9 +30,11 @@ class DataGenerator(Sequence):
         batch_x = self.image_filenames[idx * self.batch_size : (idx + 1) * self.batch_size]
         batch_y = self.labels[idx * self.batch_size : (idx + 1) * self.batch_size]
 
-        return np.array([
-            imread('./content/alll_images/' + str(file_name))
-                for file_name in batch_x]) / 255.0, np.array(batch_y)
+        data = np.array([imread(str(file_name)) for file_name in batch_x]) / 255.0
+        # need to reshape data
+        data_reshaped = data.reshape((data.shape[0], 32, 200, 200, 3))
+
+        return data_reshaped, np.array(batch_y)
 
 # Usage
 # batch_size = 32
