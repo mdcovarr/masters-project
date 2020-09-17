@@ -7,6 +7,8 @@ import os
 import glob
 import shutil
 from subprocess import check_call
+from tensorflow.keras.utils import to_categorical
+import numpy as np
 
 class DataCombiner(object):
     """
@@ -18,6 +20,7 @@ class DataCombiner(object):
         """
         self.dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'all_ensemble_images')
         self.src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'stft-ensemble-200-40Hz')
+        self.metadata_dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'ensemble_metadata')
 
     def run(self):
         """
@@ -50,13 +53,44 @@ class DataCombiner(object):
                 except:
                     print('Error moving image {0}'.format(image))
 
+    def save_metadata(self):
+        """
+            Function to get metadata infomation such as list of image names, and labels
+        """
+        labels = []
+
+        # 1. make new destivation dir for metadata
+        if os.path.isdir(self.metadata_dest_dir):
+            shutil.rmtree(self.metadata_dest_dir, ignore_errors=True)
+
+        os.makedirs(self.metadata_dest_dir)
+
+        filenames = glob.glob(os.path.join(self.dest_dir, '*'))
+        filenames.sort()
+
+        for filename in filenames:
+            if 'sub-hc' in filename:
+                labels.append(0)
+            elif 'sub-pd' in filename:
+                labels.append(1)
+            else:
+                print('Error: Counld not determine label! exiting...')
+
+        filenames = np.array(filenames)
+        labels = np.array(labels)
+        labels = to_categorical(labels)
+
+        # need to save files
+        np.save(os.path.join(self.metadata_dest_dir, 'data.npy'), filenames)
+        np.save(os.path.join(self.metadata_dest_dir, 'labels.npy'), labels)
 
 def main():
     """
         Start
     """
     data_combiner = DataCombiner()
-    data_combiner.run()
+    #data_combiner.run()
+    data_combiner.save_metadata()
 
 if __name__ == '__main__':
     main()
