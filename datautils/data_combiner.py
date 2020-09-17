@@ -98,7 +98,7 @@ def main():
         Start
     """
     data_combiner = DataCombiner()
-    #data_combiner.run()
+    data_combiner.run()
     data_combiner.save_metadata()
 
 if __name__ == '__main__':
