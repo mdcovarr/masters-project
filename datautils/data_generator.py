@@ -30,9 +30,8 @@ class DataGenerator(Sequence):
         batch_y = self.labels[idx * self.batch_size : (idx + 1) * self.batch_size]
 
         return np.array([
-            resize(imread('./content/alll_images/' + str(file_name)), (80, 80, 3))
-                for file_name in batch_x]), np.array(batch_y)
-        ])
+            imread('./content/alll_images/' + str(file_name))
+                for file_name in batch_x]) / 255.0, np.array(batch_y)
 
 # Usage
 # batch_size = 32
