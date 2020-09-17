@@ -6,9 +6,10 @@
 import os
 import glob
 import shutil
+import numpy as np
 from subprocess import check_call
 from tensorflow.keras.utils import to_categorical
-import numpy as np
+from sklearn.utils import shuffle
 
 class DataCombiner(object):
     """
@@ -78,11 +79,19 @@ class DataCombiner(object):
 
         filenames = np.array(filenames)
         labels = np.array(labels)
+        # One-Hot encode labels
         labels = to_categorical(labels)
 
         # need to save files
         np.save(os.path.join(self.metadata_dest_dir, 'data.npy'), filenames)
         np.save(os.path.join(self.metadata_dest_dir, 'labels.npy'), labels)
+
+        # can save shuffled data
+        filenames_shuffled, labels_shuffled = shuffle(filenames, labels)
+
+        # need to save files
+        np.save(os.path.join(self.metadata_dest_dir, 'data_shuffled.npy'), filenames_shuffled)
+        np.save(os.path.join(self.metadata_dest_dir, 'labels_shuffled.npy'), labels_shuffled)
 
 def main():
     """
