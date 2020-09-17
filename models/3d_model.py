@@ -7,12 +7,11 @@ matplotlib.use('Agg')
 # sklearn imports
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
-
+from sklearn.utils import shuffle
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers import Conv3D, MaxPool3D, Conv2D, MaxPool2D, Flatten, Dense
 from tensorflow.keras.optimizers import SGD
-
 from subprocess import check_call
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,6 +21,11 @@ from PIL import Image
 import glob
 import random
 import os
+import sys
+
+sys.path.append(os.path.abspath('.'))
+from datautils.data_generator import DataGenerator
+
 
 ACTIVATION = 'relu'
 PREDICT_ACTIVATION = 'softmax'
@@ -44,6 +48,10 @@ CHANNEL_CHOICES = [
     'Pz', 'PO3', 'O1', 'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8',
     'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2', 'Fz', 'Cz'
 ]
+BATCH_SIZE = 32
+
+data_filename = os.path.join(CWD, '..', 'ensemble_metadata', 'data.npy')
+labels_filename = os.path.join(CWD, '..', 'ensemble_metadata', 'labels.npy')
 
 def handle_arguments():
     """
@@ -152,10 +160,8 @@ def main():
     PATH_TO_DATASET = [NONPD_ROOT, PD_OFF_ROOT]
     print_metadata = True
 
-    print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
-    """
-        Create Directory for all models. Creation of a model for each channel
-    """
+    print('-------------------------\n[INFO] Creating Output Directory\n-------------------------')
+
     args.output_dir = os.path.join(CWD, args.output_dir)
 
     if os.path.isdir(args.output_dir):
@@ -168,27 +174,29 @@ def main():
     command = 'touch {0}'.format(output_file)
     check_call(command, shell=True)
 
-    all_data_paths = determine_data_paths(PATH_TO_DATASET, int(args.size))
+    print('-------------------------\n[INFO] Preprocessing Data\n-------------------------')
 
-    data_set, labels = get_train_test_data(all_data_paths)
+    image_filenames = np.load(data_filename)
+    labels = np.load(labels_filename)
 
-    # Normalize dataset
-    data_set = data_set / 255.0
+    image_filenames_shuffled, labels_shuffled = shuffle(image_filenames, labels)
 
-    # One-Hot encode labels if more than 2 classes
-    labels = to_categorical(labels, CLASSES)
+    image_filenames_shuffled = np.array(image_filenames_shuffled)
+    labels_shuffled = np.array(labels_shuffled)
 
-    print('-------------------------\n[INFO] Building Model\n-------------------------')
+    train_x_filenames, val_x_filenames, train_y, val_y = train_test_split(image_filenames_shuffled, labels_shuffled, test_size=0.2, random_state=1)
 
-    # split training and test data
-    (train_x, test_x, train_y, test_y) = train_test_split(data_set, labels, test_size=0.20, random_state=42)
+    my_training_generator = DataGenerator(train_x_filenames, train_y, BATCH_SIZE)
+    my_validation_generator = DataGenerator(val_x_filenames, val_y, BATCH_SIZE)
 
     # trainX shape if spectrogram images = 200x200
     # (X, 6400, 200, 3) where X is number of data entries
 
-    train_x = train_x.reshape((train_x.shape[0], 32, 200, 200, 3))
-    test_x = test_x.reshape((test_x.shape[0], 32, 200, 200, 3))
+    # TODO: NEED TO WORRY ABOUT THE RESHAPING
+    #train_x = train_x.reshape((train_x.shape[0], 32, 200, 200, 3))
+    #test_x = test_x.reshape((test_x.shape[0], 32, 200, 200, 3))
 
+    print('-------------------------\n[INFO] Building Model\n-------------------------')
 
     # building model
     model = Sequential()
