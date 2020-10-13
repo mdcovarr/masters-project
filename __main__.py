@@ -62,13 +62,6 @@ IMAGES_ROOT = ''
 PATHS = [] # ['**/ses-hc/eeg/*.bdf', '**/ses-off/eeg/*.bdf', '**/ses-on/eeg/*.bdf']
 EXCLUDED_CHANNELS = ['Status', 'EXG1', 'EXG2', 'EXG3', 'EXG4', 'EXG5', 'EXG6', 'EXG7', 'EXG8']
 
-# TODO: Parameters that can be added
-# Segemnt duration
-# high pass filter
-# low pass filter
-# overlap
-# number of data pts per segment
-
 def handle_arguments():
     """
     Function used to set arguments that can be passed to the script
@@ -86,6 +79,9 @@ def handle_arguments():
             help='Flag used to determine the root input directory of the data')
     parser.add_argument('-o', '--output-dir', dest='output_dir', required=True,
             help='Flag used to determine the root output path to place images')
+    parser.add_argument('-a', '--ica', dest='ica', required=False
+            help='Flag used to generate Independent Component Analysis of EEG data'
+    )
 
     args = parser.parse_args()
 
