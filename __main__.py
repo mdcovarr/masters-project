@@ -54,9 +54,10 @@ from scipy import signal # imports to make spectrogram images
 from datautils import wavelet_transform
 from datautils import data_loader
 from datautils import stft
+from datautils import data_ica
 
 CWD = os.path.dirname(os.path.realpath(__file__))
-ROOT_PATH = '' #os.path.join(CWD, 'data')
+ROOT_PATH = '' # os.path.join(CWD, 'data')
 IMAGES_ROOT = ''
 
 PATHS = [] # ['**/ses-hc/eeg/*.bdf', '**/ses-off/eeg/*.bdf', '**/ses-on/eeg/*.bdf']
@@ -79,7 +80,7 @@ def handle_arguments():
             help='Flag used to determine the root input directory of the data')
     parser.add_argument('-o', '--output-dir', dest='output_dir', required=True,
             help='Flag used to determine the root output path to place images')
-    parser.add_argument('-a', '--ica', dest='ica', required=False
+    parser.add_argument('-a', '--ica', dest='ica', action='store_true', required=False,
             help='Flag used to generate Independent Component Analysis of EEG data'
     )
 
@@ -102,6 +103,14 @@ def handle_stft(**kwargs):
     """
     stft_helper = stft.STFT(**kwargs)
     stft_helper.generate_stft_transform()
+
+def handle_ica(**kwargs):
+    """
+    Function used to handle Independent Component Analysis
+    and generate new data
+    """
+    ica_helper = data_ica.DataICA(**kwargs)
+    ica_helper.generate_ica()
 
 def main():
     """
@@ -130,6 +139,9 @@ def main():
 
     if args.wavelet:
         handle_morlet_wavelet_transform(state=args.classes, root_path=IMAGE_ROOT, data_helper=data_helper, excluded_channels=EXCLUDED_CHANNELS)
+
+    if args.ica:
+        handle_ica(root_path=IMAGE_ROOT, data_helper=data_helper, exclude_channels=EXCLUDED_CHANNELS)
 
 
 if __name__ == '__main__':
