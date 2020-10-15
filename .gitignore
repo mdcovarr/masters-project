@@ -5,6 +5,9 @@ stft-images/
 datasets/
 spectrogram-images/
 archive/
+ica-data/
+all_ensemble_metadata/
+all_ensemble_images/
 
 # ignore images used for training/testing
 stft-images-40Hz/
