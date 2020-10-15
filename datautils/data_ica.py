@@ -22,8 +22,6 @@ class DataICA(object):
 
         for class_label in self.data_helper.all_files.keys():
             class_files = self.data_helper.all_files[class_label]
-            class_root = os.path.join(self.root_path, str(class_label))
-            self.data_helper.clean_create_dir(class_root)
 
             for eeg_file in class_files:
                 # Load EEG data
@@ -46,9 +44,9 @@ class DataICA(object):
                 ica.apply(raw, exclude=[0, 1, 2])
 
                 # Need to save new data file
-                file_path = eeg_file.split(os.path.sep)[-4:-3]
+                file_path = eeg_file.split(os.path.sep)[-4:-1]
                 filename = os.path.basename(eeg_file)
-                patient_path = os.path.join(class_root, '/'.join(file_path))
+                patient_path = os.path.join(self.root_path, '/'.join(file_path))
                 self.data_helper.clean_create_dir(patient_path)
 
                 full_file_path = os.path.join(patient_path, filename)
