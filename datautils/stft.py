@@ -39,12 +39,6 @@ class STFT(object):
         # Parameter to determine if data has been preprocessed via ICA
         self.ica_preprocessed = True
 
-    def handle_ica_data(self):
-        """
-        Function used to handle data that has been preprocessed via ICA
-        :return None:
-        """
-
     def generate_stft_transform(self):
         """
         Function used to generate the short-time fourier transform
