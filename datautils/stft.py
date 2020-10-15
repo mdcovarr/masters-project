@@ -30,11 +30,11 @@ class STFT(object):
 
         # TODO: can make the following parameters passed as options
         #       for wavelet transform
-        self.segment_time_size = 4
+        self.segment_time_size = 2
         self.band_filter = [0.5, 40.0]
-        self.vmin_vmax = [0.0, 8.0]
+        self.vmin_vmax = [0.0, 5.0]
         self.nperseg = 256
-        self.noverlap = 230
+        self.noverlap = 128
 
         # Parameter to determine if data has been preprocessed via ICA
         self.ica_preprocessed = True
@@ -55,7 +55,7 @@ class STFT(object):
                 # Load EEG data
 
                 if self.ica_preprocessed:
-                    raw = self.data_helper.load_data_fif(eeg_file)
+                    raw = self.data_helper.load_fif_data(eeg_file)
                 else:
                     raw = self.data_helper.load_data(eeg_file)
                     # Apply filter to data
@@ -104,7 +104,7 @@ class STFT(object):
 
             for index in range(segments):
                 lower_point = index * segment_size
-                upper_point = lower_point + segment_size
+                upper_point = lower_point + segment_size - 1
                 current_segment = channel_data[lower_point : upper_point]
 
                 f, t, Zxx = signal.stft(current_segment, fs, window='blackman', nperseg=self.nperseg, boundary=None, noverlap=self.noverlap)
