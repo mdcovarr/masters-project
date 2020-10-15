@@ -36,6 +36,15 @@ class STFT(object):
         self.nperseg = 256
         self.noverlap = 230
 
+        # Parameter to determine if data has been preprocessed via ICA
+        self.ica_preprocessed = True
+
+    def handle_ica_data(self):
+        """
+        Function used to handle data that has been preprocessed via ICA
+        :return None:
+        """
+
     def generate_stft_transform(self):
         """
         Function used to generate the short-time fourier transform
@@ -50,10 +59,13 @@ class STFT(object):
 
             for eeg_file in class_files:
                 # Load EEG data
-                raw = self.data_helper.load_data(eeg_file)
 
-                # Apply filter to data
-                raw.filter(self.band_filter[0], self.band_filter[1], fir_design='firwin')
+                if self.ica_preprocessed:
+                    raw = self.data_helper.load_data_fif(eeg_file)
+                else:
+                    raw = self.data_helper.load_data(eeg_file)
+                    # Apply filter to data
+                    raw.filter(self.band_filter[0], self.band_filter[1], fir_design='firwin')
 
                 # Create output dir to patient data
                 filename_dir = eeg_file.split(os.path.sep)[-4:-3]
