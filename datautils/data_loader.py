@@ -65,3 +65,20 @@ class DataLoader(object):
             raw_data.ch_names
         """
         return raw
+
+    def load_fif_data(self, filename):
+        """
+        Function used to load EEG data
+        :param filename: the file name of .bdf file we want to read in
+        :return raw: the raw data of given filename
+        """
+        raw = mne.io.read_raw_fif(filename, preload=True)
+
+        """
+            Informative parameters
+
+            raw_data.info["sfreq"]
+            raw_data.info["nchan"]
+            raw_data.ch_names
+        """
+        return raw
